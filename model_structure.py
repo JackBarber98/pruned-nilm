@@ -20,3 +20,6 @@ def create_model(batch_size):
 def save_model(model, path):
     model.save(path + ".h5")
     model.save_weights(path + "_weights.h5")
+
+def load_model(model, path):
+    model.load_weights(path + "_weights.h5")

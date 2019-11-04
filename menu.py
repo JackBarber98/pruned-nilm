@@ -49,5 +49,24 @@ def parameter_menu():
 def model_menu():
     while True:
         try:
-            transfer = int(input("{0}".format("Use transfer learning?")))
-            if (transfer.ToLower() == "y" || transfer.ToLower() == "yes")
+            transfer = str(input("{0}".format("Use transfer learning?")))
+            if (transfer == "y" or transfer == "yes"):
+                directory = str(input("{0}".format("Enter model directory: ")))
+        except ValueError:
+            print("This value must be a string.")
+            continue
+        else:
+            print()
+            transfer_appliance = appliance()
+            return directory, transfer_appliance
+
+def save_directory():
+    while True:
+        try:
+            directory = str(input("{0}".format("Enter save directory: ")))
+        except ValueError:
+            print("This value must be a string")
+            continue
+        else:
+            print()
+            return directory
