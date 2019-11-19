@@ -1,8 +1,8 @@
 from keras.models import Model
 from keras.layers import Input, Dense, Convolution2D, Flatten, Reshape
-import tensorflow as tf 
+import os
 
-def create_model(batch_size):
+def create_model():
     input_layer = Input(shape=(597,))
     reshape_layer = Reshape((-1, 597, 1))(input_layer)
     conv_layer_1 = Convolution2D(filters=30, kernel_size=(10, 1), strides=(1, 1), padding="same", activation="relu")(reshape_layer)
@@ -18,8 +18,17 @@ def create_model(batch_size):
     return model
 
 def save_model(model, path):
+    if not os.path.exists (path + "_weights.h5"):
+        open((path + "_weights.h5"), 'a').close()
+    if not os.path.exists (path + ".h5"):
+        open((path + ".h5"), 'a').close()
     model.save(path + ".h5")
     model.save_weights(path + "_weights.h5")
 
 def load_model(model, path):
-    model.load_weights(path + "_weights.h5")
+    try:
+        model.load_weights(path + "_weights.h5")
+        return
+    except:
+        print("No saved model was found. (Takes the form of appliancename_weights.h5)")
+        return

@@ -49,8 +49,8 @@ if __name__ == "__main__":
     agg_mean = 522
     agg_std = 814
     length = 0
-    print("Selected appliance: ", appliance)
-    print("Dataset directory: ", directory)
+    print("Selected Appliance: ", appliance)
+    print("Directory of Dataset: ", directory)
 
     if not os.path.exists(appliance):
         os.makedirs(appliance)

@@ -12,7 +12,6 @@ def batch_size(crop):
             print()
             return size
 
-
 def crop():
     while True:
         try:
