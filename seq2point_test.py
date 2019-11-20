@@ -29,7 +29,7 @@ test_input, test_target = load_dataset(TEST_FILE_NAME, crop)
 
 model = create_model()
 
-test_generator = TestingChunkSlider(number_of_windows=100, offset=offset)
+test_generator = TestingChunkSlider(number_of_windows=1000, offset=offset)
 
 testing_history = model.predict_generator(test_generator.load_data(test_input), steps=1)
 
@@ -41,7 +41,7 @@ plt.plot(test_target[0 : testing_history.size], label="Truth")
 plt.title('Testing Results')
 plt.ylabel('Prediction')
 plt.xlabel('Testing Iteration')
-plt.ylim(-100, 100)
+# plt.ylim(-100, 100)
 plt.legend()
 plt.savefig(fname="testing_results.png")
 plt.show()

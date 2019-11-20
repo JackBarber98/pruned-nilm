@@ -6,7 +6,7 @@ import pandas as pd
 # chunk_size: the number of lines to read from the file at once.
 
 class InputChunkSlider():
-    def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=10000, header=0, ram_threshold=5 * 10 ** 5):
+    def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, header=0, ram_threshold=5 * 10 ** 5):
         self.file_name = file_name
         self.batch_size = 1000
         self.chunk_size = 10000
@@ -26,6 +26,7 @@ class InputChunkSlider():
         # Display a warning if there are too many rows to fit in the designated amount RAM.
         if (self.total_size > self.ram_threshold):
             print("There is too much data to load into memory, so it will be loaded in chunks. Please note that this may result in decreased training times.")
+
 
     def load_dataset(self):
         if self.total_size == 0:
@@ -71,7 +72,7 @@ class InputChunkSlider():
                 indicies = np.arange(maximum_batch_size)
                 if self.shuffle:
                     np.random.shuffle(indicies)
-
+            while True:
                 for start_index in range(0, maximum_batch_size, self.batch_size):
                     splice = indicies[start_index : start_index + self.batch_size]
                     input_data = np.array([inputs[index : index + 2 * self.offset + 1] for index in splice])
