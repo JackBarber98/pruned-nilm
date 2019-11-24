@@ -1,0 +1,9 @@
+up to 1/3 of training where kettle = 0 and mains = 0
+up to 1/3 of training where kettle = 0 and mains > 0
+1/3 of training where kettle > 0 and mains > 0
+
+get 1 / 3 of dataset
+
+if kettle == 0 && mains == 0 && type_count <= 1/3_of_dataset:
+	append
+	increment type count

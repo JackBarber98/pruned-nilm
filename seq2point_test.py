@@ -30,7 +30,12 @@ test_input, test_target = load_dataset(test_file_name, CROP)
 
 # Initialise the model and testing generator.
 model = create_model()
+<<<<<<< HEAD
 test_generator = TestingChunkSlider(number_of_windows=100, offset=offset)
+=======
+
+test_generator = TestingChunkSlider(number_of_windows=1000, offset=offset)
+>>>>>>> 7e15f265340991a6697e4964b7415c99bde496a3
 
 # Test the model.
 testing_history = model.predict_generator(test_generator.load_data(test_input), steps=1)
@@ -45,6 +50,10 @@ plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
 plt.title('Testing Results')
 plt.ylabel('Prediction')
 plt.xlabel('Testing Iteration')
+<<<<<<< HEAD
+=======
+# plt.ylim(-100, 100)
+>>>>>>> 7e15f265340991a6697e4964b7415c99bde496a3
 plt.legend()
 plt.savefig(fname="testing_results.png")
 plt.show()
