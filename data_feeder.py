@@ -9,7 +9,7 @@ class InputChunkSlider():
     def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, header=0, ram_threshold=5 * 10 ** 5):
         self.file_name = file_name
         self.batch_size = 1000
-        self.chunk_size = 10000
+        self.chunk_size = 10 ** 8
         self.shuffle = shuffle
         self.offset = offset
         self.crop = crop
@@ -19,8 +19,13 @@ class InputChunkSlider():
 
     def check_if_chunking(self):
         # Loads the file and counts the number of rows it contains.
+        print("Importing training file...")
         chunks = pd.read_csv(self.file_name, header=self.header, nrows=self.crop)
+        print("Counting number of rows...")
         self.total_size = len(chunks)
+        del chunks
+        print("Done.")
+
         print("The dataset contains ", self.total_size, " rows")
 
         # Display a warning if there are too many rows to fit in the designated amount RAM.
@@ -80,13 +85,15 @@ class InputChunkSlider():
                     yield input_data, output_data
 
 class TestingChunkSlider(object):
-    def __init__(self, number_of_windows, offset):
+    def __init__(self, number_of_windows, inputs, offset):
         self.number_of_windows = number_of_windows
         self.offset = offset
+        self.inputs = inputs
+        self.total_size = len(inputs)
 
     def load_data(self, inputs):
         inputs = inputs.flatten()
-        max_number_of_windows = inputs.size - 2 * self.offset
+        max_number_of_windows = self.inputs.size - 2 * self.offset
 
         if self.number_of_windows < 0:
             self.number_of_windows = max_number_of_windows
@@ -94,7 +101,7 @@ class TestingChunkSlider(object):
         indicies = np.arange(max_number_of_windows, dtype=int)
         for start_index in range(0, max_number_of_windows, self.number_of_windows):
             splice = indicies[start_index : start_index + self.number_of_windows]
-            input_data = np.array([inputs[index : index + 2 * self.offset + 1] for index in splice])
+            input_data = np.array([self.inputs[index : index + 2 * self.offset + 1] for index in splice])
             yield input_data
 
 

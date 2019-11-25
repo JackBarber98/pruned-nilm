@@ -27,8 +27,9 @@ def save_model(model, path):
 
 def load_model(model, path):
     try:
+        print("PATH: ", path)
         model.load_weights(path + "_weights.h5")
-        return
+        return model
     except:
         print("No saved model was found. (Takes the form of appliancename_weights.h5)")
-        return
+        return None

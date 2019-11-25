@@ -69,3 +69,9 @@ def save_directory():
         else:
             print()
             return directory
+
+from seq2point_train import train_model
+from seq2point_test import test_model
+
+train_model()
+test_model()
