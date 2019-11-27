@@ -8,7 +8,7 @@ import pandas as pd
 class InputChunkSlider():
     def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, header=0, ram_threshold=5 * 10 ** 5):
         self.file_name = file_name
-        self.batch_size = 1000
+        self.batch_size = batch_size
         self.chunk_size = 10 ** 8
         self.shuffle = shuffle
         self.offset = offset
@@ -82,6 +82,7 @@ class InputChunkSlider():
                     splice = indicies[start_index : start_index + self.batch_size]
                     input_data = np.array([inputs[index : index + 2 * self.offset + 1] for index in splice])
                     output_data = outputs[splice + self.offset].reshape(-1, 1)
+
                     yield input_data, output_data
 
 class TestingChunkSlider(object):
@@ -91,8 +92,8 @@ class TestingChunkSlider(object):
         self.inputs = inputs
         self.total_size = len(inputs)
 
-    def load_data(self, inputs):
-        inputs = inputs.flatten()
+    def load_data(self):
+        self.inputs = self.inputs.flatten()
         max_number_of_windows = self.inputs.size - 2 * self.offset
 
         if self.number_of_windows < 0:
