@@ -36,12 +36,12 @@ def test_model():
     #         print("No testing file was found.")
     #         break
 
-    test_file_name = "./kettle/kettle_test_.csv"
+    test_file_name = "./kettle/kettle_validation_.csv"
 
     offset = int(0.5 * 601 - 1)
 
     # Get the (cropped) testing dataset.
-    CROP = 200000
+    CROP = 1000000
     DEFAULT_BATCH_SIZE = 1000
     test_input, test_target = load_dataset(test_file_name, CROP)
 
@@ -55,17 +55,19 @@ def test_model():
 
     # Test the model.
     testing_history = model.predict_generator(test_generator.load_data(), steps=steps_per_test_epoch)
-    print("test history: ", np.shape(testing_history))
+
     testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
 
+    test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
+
     # Can't have negative energy readings - set any results below 0 to 0.
-    # test_target[test_target < 0] = 0
-    #testing_history[testing_history < 0] = 0
+    test_target[test_target < 0] = 0
+    testing_history[testing_history < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
-    plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
     plt.plot(testing_history, label="Testing")
+    plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
     plt.title('Testing Results')
     plt.ylabel('Prediction')
     plt.xlabel('Testing Iteration')
@@ -73,3 +75,5 @@ def test_model():
     plt.savefig(fname="testing_results.png")
     
     plt.show()
+
+test_model()

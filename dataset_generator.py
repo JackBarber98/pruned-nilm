@@ -1,13 +1,3 @@
-# JACK BARBER (2019) / 17633953 #
-#
-# Overview of Operation:
-#  - One of the REFIT houses is used for testing, and another for validation
-#  - The rest are used for training
-#  - The training, testing, and validation datasets are extracted from the REFIT csv files
-#  - Training data is merged from the different csv files to form a larger, single training file
-#  - The training set should be 60,00,000 rows in length, or 3.6GB in size
-#  - The datasets are saved to the ./[appliance] directory
-
 import os
 import time
 import re
