@@ -19,9 +19,9 @@ def train_model():
     window_offset = int((0.5 * 601 ) - 1)
 
     # Generator function to produce batches.
-    training_chunker = InputChunkSlider(file_name=training_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
+    training_chunker = InputChunkSlider(file_name=training_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=15000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
 
-    validation_chunker = InputChunkSlider(file_name=validation_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
+    validation_chunker = InputChunkSlider(file_name=validation_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=6000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
 
     # Calculate the optimum steps per epoch.
     training_chunker.check_if_chunking()
@@ -30,15 +30,16 @@ def train_model():
     # Compile the model with an Adam optimiser. Initialise early stopping callback that stops only 
     # if there's no improvement 2 epochs later.
     model = create_model()
-    model.compile(Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mean_squared_logarithmic_error", metrics=["mse", "msle"]) 
+    model.compile(Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mean_squared_error", metrics=["mse", "msle"]) 
     early_stopping = EarlyStopping(monitor="loss", min_delta=0, patience=2, verbose=2, mode="auto")
 
     # Train the model with the generator function and early stopping callback.
+
+        #     validation_data = validation_chunker.load_dataset(),
+        # validation_steps=100,
+        # validation_freq=2,
     training_history = model.fit_generator(training_chunker.load_dataset(),
         steps_per_epoch=steps_per_training_epoch,
-        validation_data = validation_chunker.load_dataset(),
-        validation_steps=100,
-        validation_freq=2,
         epochs=10,
         verbose=2, 
         callbacks=[])

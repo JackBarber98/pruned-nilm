@@ -41,13 +41,15 @@ def test_model():
     offset = int(0.5 * 601 - 1)
 
     # Get the (cropped) testing dataset.
-    CROP = 1000000
+    CROP = 500000
     DEFAULT_BATCH_SIZE = 1000
     test_input, test_target = load_dataset(test_file_name, CROP)
 
     # Initialise the model and testing generator.
     model = create_model()
-    model = load_model(model, "./kettle/saved_model/kettle_model")
+
+    model = load_model(model, "./kettle/kettle_model")
+
     test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, offset=offset)
 
     # Calculate the optimum steps per epoch.
@@ -58,11 +60,11 @@ def test_model():
 
     testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
 
-    test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
+    #test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
 
     # Can't have negative energy readings - set any results below 0 to 0.
-    test_target[test_target < 0] = 0
-    testing_history[testing_history < 0] = 0
+    #test_target[test_target < 0] = 0
+    #testing_history[testing_history < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
