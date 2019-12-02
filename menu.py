@@ -73,5 +73,5 @@ def save_directory():
 from seq2point_train import train_model
 from seq2point_test import test_model
 
-train_model()
+#train_model()
 test_model()

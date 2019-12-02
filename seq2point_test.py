@@ -2,6 +2,7 @@ import os
 import numpy as np 
 import keras
 import pandas as pd
+import time
 from model_structure import create_model, load_model
 from data_feeder import TestingChunkSlider
 import matplotlib.pyplot as plt
@@ -36,12 +37,12 @@ def test_model():
     #         print("No testing file was found.")
     #         break
 
-    test_file_name = "./kettle/kettle_validation_.csv"
+    test_file_name = "./kettle/kettle_test_.csv"
 
     offset = int(0.5 * 601 - 1)
 
     # Get the (cropped) testing dataset.
-    CROP = 500000
+    CROP = 1000000
     DEFAULT_BATCH_SIZE = 1000
     test_input, test_target = load_dataset(test_file_name, CROP)
 
@@ -56,23 +57,27 @@ def test_model():
     steps_per_test_epoch = np.round(int(test_generator.total_size / DEFAULT_BATCH_SIZE), decimals=0)
 
     # Test the model.
+    start_time = time.time()
     testing_history = model.predict_generator(test_generator.load_data(), steps=steps_per_test_epoch)
+    end_time = time.time()
+    test_time = end_time - start_time
+    print("Test Time: ", test_time)
 
-    testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
+    #testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
 
     #test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
 
     # Can't have negative energy readings - set any results below 0 to 0.
-    #test_target[test_target < 0] = 0
-    #testing_history[testing_history < 0] = 0
+    test_target[test_target < 0] = 0
+    testing_history[testing_history < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
     plt.plot(testing_history, label="Testing")
     plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
-    plt.title('Testing Results')
-    plt.ylabel('Prediction')
-    plt.xlabel('Testing Iteration')
+    plt.title('Kettle Preliminary Test Results')
+    plt.ylabel('Normalised Prediction')
+    plt.xlabel('Testing Window')
     plt.legend()
     plt.savefig(fname="testing_results.png")
     

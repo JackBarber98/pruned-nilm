@@ -26,11 +26,11 @@ def save_model(model, path):
     model.save_weights(path + "_weights.h5")
 
 def load_model(model, path):
-    try:
-        model.load_weights(path + "_weights.h5")
-        num_of_weights = model.count_params()
-        print("Loaded model with ", str(num_of_weights), " weights")
-        return model
-    except:
-        print("No saved model was found. (Takes the form of appliancename_weights.h5)")
-        return
+    # try:
+    model.load_weights("./kettle/saved_model/kettle_model_weights.h5")
+    num_of_weights = model.count_params()
+    print("Loaded model with ", str(num_of_weights), " weights")
+    return model
+    # except:
+    #     print("No saved model was found. (Takes the form of appliancename_weights.h5)")
+    #     return
