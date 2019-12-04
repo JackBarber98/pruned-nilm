@@ -37,7 +37,7 @@ def test_model():
     #         print("No testing file was found.")
     #         break
 
-    test_file_name = "./kettle/kettle_test_.csv"
+    test_file_name = "./kettle/kettle_validation_.csv"
 
     offset = int(0.5 * 601 - 1)
 
@@ -63,18 +63,21 @@ def test_model():
     test_time = end_time - start_time
     print("Test Time: ", test_time)
 
-    #testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
-
-    #test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
+    testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
+    test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
+    test_agg = (test_input.flatten() * 814) + 522
+    test_agg = test_agg[:testing_history.size]
 
     # Can't have negative energy readings - set any results below 0 to 0.
     test_target[test_target < 0] = 0
     testing_history[testing_history < 0] = 0
+    test_input[test_input < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
-    plt.plot(testing_history, label="Testing")
+    plt.plot(test_agg[offset: -offset], label="Aggregate")
     plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
+    plt.plot(testing_history, label="Testing")
     plt.title('Kettle Preliminary Test Results')
     plt.ylabel('Normalised Prediction')
     plt.xlabel('Testing Window')

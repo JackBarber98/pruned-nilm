@@ -61,7 +61,7 @@ if __name__ == "__main__":
         
             # Normalise the appliance's test data.
             test_data["aggregate"] = (test_data["aggregate"] - agg_mean) / agg_std
-            test_data[appliance] = test_data[appliance] - kettle_params["mean"] / kettle_params["std"]
+            test_data[appliance] = (test_data[appliance] - kettle_params["mean"]) / kettle_params["std"]
 
             # Save the test data.
             test_data.to_csv("./" + appliance + "/" + appliance + "_test_.csv", index=False)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             
             # Normalise the validation data.
             validation_data["aggregate"] = (validation_data["aggregate"] - agg_mean) / agg_std
-            validation_data[appliance] = validation_data[appliance] - kettle_params["mean"] / kettle_params["std"]
+            validation_data[appliance] = (validation_data[appliance] - kettle_params["mean"]) / kettle_params["std"]
 
             # Save validation data.
             validation_data.to_csv("./" + appliance + "./" + appliance + "_validation_.csv", index=False)

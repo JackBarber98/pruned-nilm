@@ -31,7 +31,7 @@ def train_model():
     # if there's no improvement 2 epochs later.
     model = create_model()
     model.compile(Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-    early_stopping = EarlyStopping(monitor="val_loss", min_delta=0.001, patience=1, verbose=2, mode="auto")
+    early_stopping = EarlyStopping(monitor="val_mse", min_delta=0, patience=5, verbose=2, mode="auto")
 
     # Train the model with the generator function and early stopping callback.
     training_history = model.fit_generator(training_chunker.load_dataset(),
@@ -40,12 +40,12 @@ def train_model():
         verbose=2,
         validation_data = validation_chunker.load_dataset(),
         validation_steps=1000,
-        validation_freq=2,
+        validation_freq=5,
         callbacks=[early_stopping])
 
     # Plot the monitored metrics and save.
-    plt.plot(training_history.history['mse'], label="MAE")
-    plt.plot(training_history.history['msle'], label="MSE (Loss)")
+    plt.plot(training_history.history['loss'], label="MSE (Training Loss)")
+    plt.plot(training_history.history["val_loss"], label="MSE (Validation Loss)")
     plt.title('Training Metrics')
     plt.ylabel('y')
     plt.xlabel('Epoch')
