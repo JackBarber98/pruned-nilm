@@ -2,18 +2,12 @@ import os
 import time
 import re
 import pandas as pd
+from appliance_data import appliance_data
 
-# PLACE THIS IN A SEPERATE FILE #
-kettle_params = {
-    "training": [3, 4, 5, 6, 7, 8, 9, 12, 13, 19, 20],
-    "channels": [8, 9, 9, 8, 7, 9, 9, 7, 6, 9, 5, 9],
-    "testing": 2,
-    "testing-channel": 8,
-    "validation": 5,
-    "validation-channel": 8,
-    "mean": 700,
-    "std": 1000,
-}
+APPLIANCE = "microwave"
+DIRECTORY = "./refit_dataset/"
+AGG_MEAN = 522
+AGG_STD = 814
 
 # Loads data about a specified appliance and returns the data as a DataFrame.
 def load_file(directory, house, appliance, channel):
@@ -34,83 +28,85 @@ def digits_in_file_name(file_name):
 if __name__ == "__main__":
     initial_time = time.time()
 
-    appliance = "kettle"
-    directory = "./refit_dataset/"
-    agg_mean = 522
-    agg_std = 814
-    length = 0
-    print("Selected Appliance: ", appliance)
-    print("Directory of Dataset: ", directory)
+    print("Selected Appliance: ", APPLIANCE)
+    print("Directory of Dataset: ", DIRECTORY)
 
-    if not os.path.exists(appliance):
-        os.makedirs(appliance)
+    length = 0
+
+    if not os.path.exists(APPLIANCE):
+        os.makedirs(APPLIANCE)
     
     # Loops through files and folders found in the directory
-    for index, file_name in enumerate(os.listdir(directory)):
+    for index, file_name in enumerate(os.listdir(DIRECTORY)):
 
         # Format the appliance's test data.
-        if file_name == "CLEAN_House" + str(kettle_params["testing"]) + ".csv":
-            print("Formatting " + appliance + " test data...")
+        if file_name == "CLEAN_House" + str(appliance_data[APPLIANCE]["test_house"]) + ".csv":
+            print("Formatting " + APPLIANCE + " test data...")
             
             # Load the test data.
-            test_data = load_file(directory,
-                                kettle_params["testing"],
-                                appliance,
-                                kettle_params["testing-channel"]
+            test_data = load_file(DIRECTORY,
+                                appliance_data[APPLIANCE]["test_house"],
+                                APPLIANCE,
+                                appliance_data[APPLIANCE]['channels'][appliance_data[APPLIANCE]['houses']
+                                    .index(appliance_data[APPLIANCE]['test_house'])]
                                 )
         
             # Normalise the appliance's test data.
-            test_data["aggregate"] = (test_data["aggregate"] - agg_mean) / agg_std
-            test_data[appliance] = (test_data[appliance] - kettle_params["mean"]) / kettle_params["std"]
+            test_data["aggregate"] = (test_data["aggregate"] - AGG_MEAN) / AGG_STD
+            test_data[APPLIANCE] = (test_data[APPLIANCE] - appliance_data[APPLIANCE]["mean"]) / appliance_data[APPLIANCE]["std"]
 
             # Save the test data.
-            test_data.to_csv("./" + appliance + "/" + appliance + "_test_.csv", index=False)
+            test_data.to_csv("./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv", index=False)
 
             # Delete test data from memory.
             del test_data
 
         # Format the appliance's validation data.
-        elif file_name == "CLEAN_House" + str(kettle_params["validation"]) + ".csv":
-            print("Formatting " + appliance + " validation data...")
+        elif file_name == "CLEAN_House" + str(appliance_data[APPLIANCE]["validation_house"]) + ".csv":
+            print("Formatting " + APPLIANCE + " validation data...")
             
             # Load the validation data.
-            validation_data = load_file(directory,
-                                        kettle_params["validation"],
-                                        appliance,
-                                        kettle_params["validation-channel"])
+            validation_data = load_file(DIRECTORY,
+                                        appliance_data[APPLIANCE]["validation_house"],
+                                        APPLIANCE,
+                                        appliance_data[APPLIANCE]['channels'][appliance_data[APPLIANCE]['houses']
+                                            .index(appliance_data[APPLIANCE]['validation_house'])]
+                                        )
             
             # Normalise the validation data.
-            validation_data["aggregate"] = (validation_data["aggregate"] - agg_mean) / agg_std
-            validation_data[appliance] = (validation_data[appliance] - kettle_params["mean"]) / kettle_params["std"]
+            validation_data["aggregate"] = (validation_data["aggregate"] - AGG_MEAN) / AGG_STD
+            validation_data[APPLIANCE] = (validation_data[APPLIANCE] - appliance_data[APPLIANCE]["mean"]) / appliance_data[APPLIANCE]["std"]
 
             # Save validation data.
-            validation_data.to_csv("./" + appliance + "./" + appliance + "_validation_.csv", index=False)
+            validation_data.to_csv("./" + APPLIANCE + "./" + APPLIANCE + "_validation_.csv", index=False)
 
             # Delete validation data from memory.
             del validation_data
 
         # Format training data.
-        elif digits_in_file_name(file_name) in kettle_params["training"]:
+        elif digits_in_file_name(file_name) in appliance_data[APPLIANCE]["houses"]:
+
             try:
-                print("Adding house " + str(digits_in_file_name(file_name)) + " to training dataset.")
-                training_data = load_file(directory,
+                training_data = load_file(DIRECTORY,
                                 digits_in_file_name(file_name),
-                                appliance,
-                                kettle_params["channels"][kettle_params["training"].index(digits_in_file_name(file_name))]
+                                APPLIANCE,
+                                appliance_data[APPLIANCE]["channels"][appliance_data[APPLIANCE]["houses"]
+                                    .index(digits_in_file_name(file_name))]
                                 )
 
                 # Normalise the training data.
-                training_data["aggregate"] = (training_data["aggregate"] - agg_mean) / agg_std
-                training_data[appliance] = (training_data[appliance] - kettle_params["mean"]) / kettle_params["std"]
+                training_data["aggregate"] = (training_data["aggregate"] - AGG_MEAN) / AGG_STD
+                training_data[APPLIANCE] = (training_data[APPLIANCE] - appliance_data[APPLIANCE]["mean"]) / appliance_data[APPLIANCE]["std"]
                 rows, columns = training_data.shape
                 
                 length += rows
 
-                training_data.to_csv("./" + appliance + "/" + appliance + "_training_.csv", mode="a", index=False, header=False)
+                training_data.to_csv("./" + APPLIANCE + "/" + APPLIANCE + "_training_.csv", mode="a", index=False, header=False)
                 
                 # Delete training data from memory.
                 del training_data
             except:
+                print("PASS")
                 pass
 
     print("The training dataset contains " + str(length) + " rows of data.")
