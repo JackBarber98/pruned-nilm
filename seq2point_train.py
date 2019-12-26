@@ -14,14 +14,16 @@ def train_model():
     SIZE_OF_CHUNK = 5 * 10 ** 2
     DEFAULT_BATCH_SIZE = 1000
 
-    training_directory = "./kettle/kettle_validation_.csv"
-    validation_directory = "./kettle/kettle_test_.csv"
+    APPLIANCE = "kettle"
+    TRAINING_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_validation_.csv"
+    VALIDATION_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv"
+
     window_offset = int((0.5 * 601 ) - 1)
 
     # Generator function to produce batches.
-    training_chunker = InputChunkSlider(file_name=training_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=True, offset=window_offset, header=0, ram_threshold=5*10**5)
+    training_chunker = InputChunkSlider(file_name=TRAINING_DIRECTORY, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=True, offset=window_offset, header=0, ram_threshold=5*10**5)
 
-    validation_chunker = InputChunkSlider(file_name=validation_directory, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
+    validation_chunker = InputChunkSlider(file_name=VALIDATION_DIRECTORY, chunk_size=SIZE_OF_CHUNK, batch_size=DEFAULT_BATCH_SIZE, crop=100000, shuffle=False, offset=window_offset, header=0, ram_threshold=5*10**5)
 
     # Calculate the optimum steps per epoch.
     training_chunker.check_if_chunking()

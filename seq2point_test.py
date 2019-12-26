@@ -5,18 +5,8 @@ import pandas as pd
 import time
 from model_structure import create_model, load_model
 from data_feeder import TestingChunkSlider
+from appliance_data import appliance_data
 import matplotlib.pyplot as plt
-
-kettle_params = {
-    "training": [3, 4, 5, 6, 7, 8, 9, 12, 13, 19, 20],
-    "channels": [8, 9, 9, 8, 7, 9, 9, 7, 6, 9, 5, 9],
-    "testing": 2,
-    "testing-channel": 8,
-    "validation": 5,
-    "validation-channel": 8,
-    "mean": 700,
-    "std": 1000,
-}
 
 def test_model():
 
@@ -28,28 +18,23 @@ def test_model():
         del data_frame
         return test_input, test_target
 
-    # Identify the test file.
-    # for file_name in os.listdir("./kettle/"):
-    #     print("file name: ", file_name)
-    #     if ("test" in file_name):
-    #         test_file_name = file_name
-    #     else:
-    #         print("No testing file was found.")
-    #         break
+    APPLIANCE = "kettle"
+    MODEL_DIRECTORY = "./" + APPLIANCE + "/saved_model/"
 
-    test_file_name = "./kettle/kettle_validation_.csv"
+    TEST_DOMAIN = "kettle"
+    TEST_FILE = "./" + TEST_DOMAIN + "/" + TEST_DOMAIN + "_validation_.csv"
 
     offset = int(0.5 * 601 - 1)
 
     # Get the (cropped) testing dataset.
     CROP = 1000000
     DEFAULT_BATCH_SIZE = 1000
-    test_input, test_target = load_dataset(test_file_name, CROP)
+    test_input, test_target = load_dataset(TEST_FILE, CROP)
 
     # Initialise the model and testing generator.
     model = create_model()
 
-    model = load_model(model, "./kettle/kettle_model")
+    model = load_model(model, MODEL_DIRECTORY)
 
     test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, offset=offset)
 
@@ -63,8 +48,8 @@ def test_model():
     test_time = end_time - start_time
     print("Test Time: ", test_time)
 
-    testing_history = ((testing_history * kettle_params["std"]) + kettle_params["mean"])
-    test_target = ((test_target * kettle_params["std"]) + kettle_params["mean"])
+    testing_history = ((testing_history * appliance_data[TEST_DOMAIN]["std"]) + appliance_data[TEST_DOMAIN]["mean"])
+    test_target = ((test_target * appliance_data[TEST_DOMAIN]["std"]) + appliance_data[TEST_DOMAIN]["mean"])
     test_agg = (test_input.flatten() * 814) + 522
     test_agg = test_agg[:testing_history.size]
 
