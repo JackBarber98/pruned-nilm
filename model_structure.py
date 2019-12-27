@@ -31,6 +31,3 @@ def load_model(model, path):
     num_of_weights = model.count_params()
     print("Loaded model with ", str(num_of_weights), " weights")
     return model
-    # except:
-    #     print("No saved model was found. (Takes the form of appliancename_weights.h5)")
-    #     return
