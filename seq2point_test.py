@@ -8,7 +8,7 @@ from data_feeder import TestingChunkSlider
 from appliance_data import appliance_data
 import matplotlib.pyplot as plt
 
-def test_model():
+def test_model(appliance, test_domain, crop, batch_size):
 
     # Split the test dataset into features and targets.
     def load_dataset(file_name, crop):
@@ -18,28 +18,22 @@ def test_model():
         del data_frame
         return test_input, test_target
 
-    APPLIANCE = "kettle"
-    MODEL_DIRECTORY = "./" + APPLIANCE + "/saved_model/"
-
-    TEST_DOMAIN = "kettle"
-    TEST_FILE = "./" + TEST_DOMAIN + "/" + TEST_DOMAIN + "_validation_.csv"
+    model_directory = "./" + appliance + "/saved_model/"
+    test_file = "./" + test_domain + "/" + test_domain + "_test_.csv"
 
     offset = int(0.5 * 601 - 1)
 
-    # Get the (cropped) testing dataset.
-    CROP = 1000000
-    DEFAULT_BATCH_SIZE = 1000
-    test_input, test_target = load_dataset(TEST_FILE, CROP)
+    test_input, test_target = load_dataset(test_file, crop)
 
     # Initialise the model and testing generator.
     model = create_model()
 
-    model = load_model(model, MODEL_DIRECTORY)
+    model = load_model(model, model_directory)
 
-    test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, offset=offset)
+    test_generator = TestingChunkSlider(number_of_windows=1000, inputs=test_input, offset=offset)
 
     # Calculate the optimum steps per epoch.
-    steps_per_test_epoch = np.round(int(test_generator.total_size / DEFAULT_BATCH_SIZE), decimals=0)
+    steps_per_test_epoch = np.round(int(test_generator.total_size / batch_size), decimals=0)
 
     # Test the model.
     start_time = time.time()
@@ -47,16 +41,17 @@ def test_model():
     end_time = time.time()
     test_time = end_time - start_time
     print("Test Time: ", test_time)
+    print("Num of Zeros: ", np.count_nonzero(model.layers[2].get_weights()[0]==0))
 
-    testing_history = ((testing_history * appliance_data[TEST_DOMAIN]["std"]) + appliance_data[TEST_DOMAIN]["mean"])
-    test_target = ((test_target * appliance_data[TEST_DOMAIN]["std"]) + appliance_data[TEST_DOMAIN]["mean"])
+    testing_history = ((testing_history * appliance_data[test_domain]["std"]) + appliance_data[test_domain]["mean"])
+    test_target = ((test_target * appliance_data[test_domain]["std"]) + appliance_data[test_domain]["mean"])
     test_agg = (test_input.flatten() * 814) + 522
     test_agg = test_agg[:testing_history.size]
 
     # Can't have negative energy readings - set any results below 0 to 0.
-    test_target[test_target < 0] = 0
-    testing_history[testing_history < 0] = 0
-    test_input[test_input < 0] = 0
+    # test_target[test_target < 0] = 0
+    # testing_history[testing_history < 0] = 0
+    # test_input[test_input < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
@@ -70,5 +65,3 @@ def test_model():
     plt.savefig(fname="testing_results.png")
     
     plt.show()
-
-test_model()

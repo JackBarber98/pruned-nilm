@@ -57,6 +57,7 @@ class InputChunkSlider():
                     splice = indicies[start_index : start_index + self.batch_size]
                     input_data = np.array([inputs[index : index + 2 * self.offset + 1] for index in splice])
                     output_data = outputs[splice + self.offset].reshape(-1, 1)
+
                     yield input_data, output_data
         # Skip rows where needed to allow data to be loaded properly when there is not enough memory.
         if (self.total_size >= self.ram_threshold):
