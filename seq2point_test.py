@@ -10,11 +10,36 @@ import matplotlib.pyplot as plt
 
 def test_model(appliance, test_domain, crop, batch_size):
 
+    """Tests a pre-trained seq2point model in either the domain it was trained in or using transfer 
+    learning Plots and saves the results.
+
+    Parameters:
+    appliance (string): The appliance that the neural network was trained to make inferences for.
+    test_domain (string): The appliance that the neural network will be tested with.
+    crop (int): The number of rows of the testing dataset to train the network with.
+    batch_size (int): The portion of the cropped dataset to be processed by the network at once.
+
+    """
+
     # Split the test dataset into features and targets.
     def load_dataset(file_name, crop):
+
+        """Loads the testing dataset from the location specified by file_name.
+
+        Parameters:
+        file_name (string): The path and file name of the test CSV file.
+        crop (int): The number of rows of the test dataset to use.
+
+        Returns:
+        test_input (numpy.array): The first n (crop) features of the test dataset.
+        test_target (numpy.array): The first n (crop) targets of the test dataset.
+
+        """
+
         data_frame = pd.read_csv(file_name, nrows=crop, header=0)
         test_input = np.round(np.array(data_frame.iloc[:, 0], float), 6)
         test_target = np.round(np.array(data_frame.iloc[offset:-offset, 1], float), 6)
+        
         del data_frame
         return test_input, test_target
 

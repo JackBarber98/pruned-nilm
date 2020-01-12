@@ -6,21 +6,39 @@ import pandas as pd
 # chunk_size: the number of lines to read from the file at once.
 
 class InputChunkSlider():
-    def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, header=0, ram_threshold=5 * 10 ** 5):
+
+    """Yields features and targets for training a ConvNet.
+
+    Parameters:
+    file_name (string): The path where the training dataset is located.
+    chunk_size (int): The size of each chunk of data to be processed.
+    shuffle (bool): Whether the dataset should be shuffled before being returned.
+    offset (int):
+    batch_size (int): The size of each batch in a chunk.
+    crop (int): The number of rows of the dataset to return.
+    ram_threshold (int): The maximum amount of RAM to utilise at a time.
+
+    """
+
+    def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, ram_threshold=5 * 10 ** 5):
         self.file_name = file_name
         self.batch_size = batch_size
         self.chunk_size = 10 ** 8
         self.shuffle = shuffle
         self.offset = offset
         self.crop = crop
-        self.header = header
         self.ram_threshold = ram_threshold
         self.total_size = 0
 
     def check_if_chunking(self):
+
+        """Count the number of rows in the dataset and determine whether this is larger than the chunking threshold or not.
+
+        """
+
         # Loads the file and counts the number of rows it contains.
         print("Importing training file...")
-        chunks = pd.read_csv(self.file_name, header=self.header, nrows=self.crop)
+        chunks = pd.read_csv(self.file_name, header=0, nrows=self.crop)
         print("Counting number of rows...")
         self.total_size = len(chunks)
         del chunks
@@ -34,13 +52,22 @@ class InputChunkSlider():
 
 
     def load_dataset(self):
+
+        """Yields pairs of features and targets that will be used directly by a neural network for training.
+
+        Yields:
+        input_data (numpy.array): A 1D array of size batch_size containing features of a single input. 
+        output_data (numpy.array): A 1D array of size batch_size containing the target values corresponding to each feature set.
+
+        """
+
         if self.total_size == 0:
             self.check_if_chunking()
 
         # If the data can be loaded in one go, don't skip any rows.
         if (self.total_size <= self.ram_threshold):
             # Returns an array of the content from the CSV file.
-            data_array = np.array(pd.read_csv(self.file_name, nrows=self.crop, header=self.header))
+            data_array = np.array(pd.read_csv(self.file_name, nrows=self.crop, header=0))
             inputs = data_array[:, 0]
             outputs = data_array[:, 1]
 
@@ -87,6 +114,16 @@ class InputChunkSlider():
                     yield input_data, output_data
 
 class TestingChunkSlider(object):
+
+    """Yields features and targets for testing and validating a ConvNet.
+
+    Parameters:
+    number_of_windows (int): The number of sliding windows to produce.
+    inputs (numpy.array): The available testing / validation features.
+    offset (int):
+
+    """
+
     def __init__(self, number_of_windows, inputs, offset):
         self.number_of_windows = number_of_windows
         self.offset = offset
@@ -94,6 +131,14 @@ class TestingChunkSlider(object):
         self.total_size = len(inputs)
 
     def load_data(self):
+
+        """Yields features and targets for testing and validating a ConvNet.
+
+        Yields:
+        input_data (numpy.array): An array of features to test / validate the network with.
+
+        """
+
         self.inputs = self.inputs.flatten()
         max_number_of_windows = self.inputs.size - 2 * self.offset
 

@@ -14,15 +14,29 @@ from entropic_callback import Entropic
 
 def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
+    """Trains an energy disaggregation model using a user-selected pruning algorithm (default is no pruning). 
+    Plots and saves the resulting model.
+
+    Parameters:
+    appliance (string): The appliance that the neural network will be able to infer energy readings for.
+    pruning_algorithm (string): The pruning algorithm that will be applied when training the network.
+    crop (int): The number of rows of the training dataset to train the network with.
+    batch_size (int): The portion of the cropped dataset to be processed by the network at once.
+
+    """
+
     # Static maximum chunk.
     SIZE_OF_CHUNK = 5 * 10 ** 2
 
+    # Directories of the training and validation files. Always has the structure 
+    # ./{appliance_name}/{appliance_name}_train_.csv for training or 
+    # ./{appliance_name}/{appliance_name}_validation_.csv
     TRAINING_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv"
     VALIDATION_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv"
 
     WINDOW_OFFSET = int((0.5 * 601 ) - 1)
 
-    # Generator function to produce batches.
+    # Generator function to produce batches of training data.
     TRAINING_CHUNKER = InputChunkSlider(file_name=TRAINING_DIRECTORY, 
                                         chunk_size=SIZE_OF_CHUNK, 
                                         batch_size=BATCH_SIZE, 
@@ -31,6 +45,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
                                         header=0, 
                                         ram_threshold=5*10**5)
 
+    # Generator function to produce batches of validation data.
     VALIDATION_CHUNKER = InputChunkSlider(file_name=VALIDATION_DIRECTORY, 
                                             chunk_size=SIZE_OF_CHUNK, 
                                             batch_size=BATCH_SIZE, 
@@ -40,7 +55,20 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
                                             ram_threshold=5*10**5)
 
     def default_train(model, early_stopping, steps_per_training_epoch):
-        entropic = Entropic()
+
+        """The default training method the neural network will use. No pruning occurs.
+
+        Parameters:
+        model (tensorflow.keras.Model): The seq2point model being trained.
+        early_stopping (tensorflow.keras.callbacks.EarlyStopping): An early stopping callback to 
+        prevent overfitting.
+        steps_per_training_epoch (int): The number of training steps to occur per epoch.
+
+        Returns:
+        training_history (numpy.array): The error metrics and loss values that were calculated 
+        at the end of each training epoch.
+
+        """
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
@@ -49,10 +77,25 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=10,
             validation_freq=2,
-            callbacks=[early_stopping, entropic])
+            callbacks=[early_stopping])
         return training_history
 
     def tfmot_pruning(model, early_stopping, steps_per_training_epoch):
+
+        """Trains the model with TensorFlow Optimisation Tookit's prune_low_magnitude method.
+
+        Parameters:
+        model (tensorflow.keras.Model): The seq2point model being trained.
+        early_stopping (tensorflow.keras.callbacks.EarlyStopping): An early stopping callback to 
+        prevent overfitting.
+        steps_per_training_epoch (int): The number of training steps to occur per epoch.
+
+        Returns:
+        training_history (numpy.array): The error metrics and loss values that were calculated 
+        at the end of each training epoch.
+
+        """
+
         pruning_params = {
             'pruning_schedule': sparsity.keras.ConstantSparsity(0.8, 0),
             'block_size': (1, 1),
@@ -60,7 +103,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         }
 
         model = sparsity.keras.prune_low_magnitude(model, **pruning_params)
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "mae", "accuracy"])
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "mae"])
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
@@ -75,6 +118,22 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         return training_history
 
     def spp_pruning(model, early_stopping, steps_per_training_epoch):
+
+
+        """Trains the model with Wang et al.'s prune_low_magnitude method.
+
+        Parameters:
+        model (tensorflow.keras.Model): The seq2point model being trained.
+        early_stopping (tensorflow.keras.callbacks.EarlyStopping): An early stopping callback to 
+        prevent overfitting.
+        steps_per_training_epoch (int): The number of training steps to occur per epoch.
+
+        Returns:
+        training_history (numpy.array): The error metrics and loss values that were calculated 
+        at the end of each training epoch.
+
+        """
+
         spp = SPP(model=model)
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
@@ -95,7 +154,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     # if there's no improvement 2 epochs later.
     model = create_model()
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae", "accuracy"]) 
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0, patience=0, verbose=1, mode="auto")
 
     if PRUNING_ALGORITHM == "default":
