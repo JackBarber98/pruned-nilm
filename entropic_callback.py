@@ -47,11 +47,13 @@ class Entropic(tf.keras.callbacks.Callback):
         # plt.figure(2)
         # plt.plot(self.layer_information[5])
         # plt.plot([0, 500], [- self.layer_entropies[5] * 1.1, - self.layer_entropies[5] * 1.1])
+
+        self.prune_weights()
         # plt.show()
 
     def get_probability_distribution(self, weights, index):
         distribution_values = np.random.normal(self.means[index], self.stds[index], np.size(weights))
-        _, bins, _ = plt.hist(distribution_values, int(np.size(weights) / 20), density=True)
+        _, bins, _ = plt.hist(distribution_values, int(np.size(weights) - 1), density=True)
         return 1 / (self.stds[index] * np.sqrt(2 * np.pi)) * np.exp( - (bins - self.means[index]) ** 2 / (2 * self.stds[index] ** 2))
 
     def generate_pruning_stats(self):
@@ -100,3 +102,14 @@ class Entropic(tf.keras.callbacks.Callback):
             self.layer_entropies.append(entropies)
 
             index += 1
+
+    def prune_weights(self):
+        index = 0
+        for layer in self.model.layers[:6]:
+            weights = layer.get_weights()
+            if np.shape(weights)[0] != 0:
+                weights = weights[0].flatten()
+
+                # If A[W] < E[W] * 1.1 && W ~= 0 => W = 0
+
+            index += 1        
