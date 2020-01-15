@@ -42,7 +42,6 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
                                         batch_size=BATCH_SIZE, 
                                         crop=CROP, shuffle=True, 
                                         offset=WINDOW_OFFSET, 
-                                        header=0, 
                                         ram_threshold=5*10**5)
 
     # Generator function to produce batches of validation data.
@@ -51,7 +50,6 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
                                             batch_size=BATCH_SIZE, 
                                             crop=CROP, shuffle=True, 
                                             offset=WINDOW_OFFSET, 
-                                            header=0, 
                                             ram_threshold=5*10**5)
 
     def default_train(model, early_stopping, steps_per_training_epoch):
@@ -70,14 +68,16 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         """
 
+        entropic = Entropic()
+
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=15,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
-            validation_steps=10,
-            validation_freq=2,
-            callbacks=[early_stopping])
+            # validation_data = VALIDATION_CHUNKER.load_dataset(),
+            # validation_steps=0,
+            # validation_freq=0,
+            callbacks=[early_stopping, entropic])
         return training_history
 
     def tfmot_pruning(model, early_stopping, steps_per_training_epoch):
@@ -155,7 +155,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     model = create_model()
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0, patience=0, verbose=1, mode="auto")
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=0, verbose=1, mode="auto")
 
     if PRUNING_ALGORITHM == "default":
         training_history = default_train(model, early_stopping, steps_per_training_epoch)
@@ -168,7 +168,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
     # Plot the monitored metrics and save.
     plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
-    plt.plot(training_history.history["val_loss"], label="Val Loss")
+    #plt.plot(training_history.history["val_loss"], label="Val Loss")
     plt.title('Training Metrics')
     plt.ylabel('y')
     plt.xlabel('Epoch')

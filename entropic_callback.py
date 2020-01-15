@@ -4,6 +4,9 @@ import scipy
 import scipy.stats as stats
 import math
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sb
 
 class Entropic(tf.keras.callbacks.Callback):
     def __init__(self):
@@ -17,63 +20,83 @@ class Entropic(tf.keras.callbacks.Callback):
         self.layer_information = []
 
     def on_epoch_end(self, epoch, logs={}):
+
+        self.means = []
+        self.stds = []
+        self.layer_probabilities = []
+        self.layer_information = []
+        self.layer_entropies = []
+
         self.generate_pruning_stats()
-        self.probability_of_weights()
-        self.calculate_information()
+
+        self.calculate_probability_and_information_values()
+        self.calculate_weight_entropy()
+            
+        # ROUGH VALUES.
+        # prob_values = []
+        # info_values = []
+        # for prob_dens in freq:
+        #     prob = np.trapz([prob_dens, prob_dens + 0.1], dx=0.01)
+        #     info = - np.log(prob)
+        #     prob_values.append(prob)
+        #     info_values.append(info)
+        
+        # plt.clf()
+        # plt.figure(1)
+        # plt.plot(self.layer_probabilities[5])
+        # plt.figure(2)
+        # plt.plot(self.layer_information[5])
+        # plt.plot([0, 500], [- self.layer_entropies[5] * 1.1, - self.layer_entropies[5] * 1.1])
+        # plt.show()
+
+    def get_probability_distribution(self, weights, index):
+        distribution_values = np.random.normal(self.means[index], self.stds[index], np.size(weights))
+        _, bins, _ = plt.hist(distribution_values, int(np.size(weights) / 20), density=True)
+        return 1 / (self.stds[index] * np.sqrt(2 * np.pi)) * np.exp( - (bins - self.means[index]) ** 2 / (2 * self.stds[index] ** 2))
 
     def generate_pruning_stats(self):
         for layer in self.model.layers:
             weights = layer.get_weights()
             if np.shape(weights)[0] != 0:
 
-                self.means.append(np.nanmean(weights[0]))
-                self.stds.append(np.nanstd(weights[0]))
+                self.means.append(np.mean(weights[0]))
+                self.stds.append(np.std(weights[0]))
 
             else:
                 self.means.append(0)
                 self.stds.append(0)
 
-    def probability(self, input_value, index):
-        return np.power((math.exp(1) / (np.sqrt(2 * math.pi * np.power(self.stds[index], 2)))), (-np.power(input_value - self.means[index], 2) / (2 * np.power(self.stds[index], 2))))
-
-    def probability_of_weights(self):
-        index = 0 
-        for layer in self.model.layers:
-
+    def calculate_probability_and_information_values(self):
+        index = 0
+        for layer in self.model.layers[:6]:
             weights = layer.get_weights()
             if np.shape(weights)[0] != 0:
-                probability = self.probability(weights[0], index)
-                self.layer_probabilities.append(probability)
+                probability_distribution = self.get_probability_distribution(weights[0], index)
+                
+                probability_values = []
+                information_values = []
+                for density in probability_distribution:
+                    probability = np.trapz([density, density + 0.1], dx=0.01)
+                    probability_values.append(probability)
+                    information_value = - np.log10(probability)
+                    information_values.append(information_value)
+
+                self.layer_probabilities.append(probability_values)
+                self.layer_information.append(information_values)
             else:
-                self.layer_probabilities.append(-1)
+                self.layer_probabilities.append(0)
+                self.layer_information.append(0)
             index += 1
 
-            print(self.layer_probabilities)
 
     def calculate_weight_entropy(self):
         index = 0
         for layer in self.model.layers:
             weights = layer.get_weights()
-
             if np.shape(weights)[0] != 0:
-                entropies = np.log(self.stds[index] * np.sqrt(2 * math.pi * math.exp(1)))
-                self.layer_entropies.append(entropies)
+                entropies = np.log(self.stds[index] * np.sqrt(2 * math.pi * np.exp(1)))
             else:
-                self.layer_entropies.append(0)
+                entropies = 0
+            self.layer_entropies.append(entropies)
+
             index += 1
-
-    def calculate_information(self):
-        index = 0
-        for layer in self.model.layers:
-            weights = layer.get_weights()
-
-            # if np.shape(weights)[0] != 0:
-            #     # print(np.shape(weights[0]))
-            #     # print(self.layer_probabilities[0])
-            #         # for weight in weights[0][0]:
-            #         #     # y_1 = self.probability(weight)
-            #         #     # y_2 = self.probability(weight + 0.00001)
-
-            # else:
-            #     self.layer_entropies.append(0)
-            # index += 1        
