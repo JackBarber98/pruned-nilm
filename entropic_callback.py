@@ -40,16 +40,8 @@ class Entropic(tf.keras.callbacks.Callback):
         #     info = - np.log(prob)
         #     prob_values.append(prob)
         #     info_values.append(info)
-        
-        # plt.clf()
-        # plt.figure(1)
-        # plt.plot(self.layer_probabilities[5])
-        # plt.figure(2)
-        # plt.plot(self.layer_information[5])
-        # plt.plot([0, 500], [- self.layer_entropies[5] * 1.1, - self.layer_entropies[5] * 1.1])
 
         self.prune_weights()
-        # plt.show()
 
     def get_probability_distribution(self, weights, index):
         distribution_values = np.random.normal(self.means[index], self.stds[index], np.size(weights))
@@ -108,8 +100,16 @@ class Entropic(tf.keras.callbacks.Callback):
         for layer in self.model.layers[:6]:
             weights = layer.get_weights()
             if np.shape(weights)[0] != 0:
-                weights = weights[0].flatten()
+                original_shape = np.shape(weights[0])
+                flattened_weights = weights[0].flatten()
 
-                # If A[W] < E[W] * 1.1 && W ~= 0 => W = 0
+                weight_index = 0
+                for _ in flattened_weights:
+                    if self.layer_information[index][weight_index] < - self.layer_entropies[index] * 1.1:
+                        flattened_weights[weight_index] = 0
+                    weight_index += 1
+
+                weights[0] = np.reshape(flattened_weights, original_shape)
+                layer.set_weights(weights) 
 
             index += 1        
