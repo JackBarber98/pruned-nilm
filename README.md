@@ -1,6 +1,3 @@
-# prunedNILM
-Contempory pruning algorithms applied to transferable NILM models
-
 # Pruning Algorithms for Seq2Point Energy Disaggregation
 
 This code base implements three contemporary pruning algorithms designed to reduce the size of a typical sequence-to-point deep learning model [1] for use in energy disaggreation / non-intrusive load monitoring.
