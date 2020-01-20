@@ -22,20 +22,16 @@ class Threshold(Callback):
 
         self.delta_percentiles = []
 
-    def on_epoch_end(self, epoch, logs={}):
-        self.delta_percentiles = []
-
-        if epoch % self.PRUNING_FREQUENCY == 0:
-
-            index = 0 
-            for layer in self.model.layers:
-                if np.shape(layer.get_weights())[0] != 0:
-                    weights = layer.get_weights()
-                    self.get_delta_percentiles(weights)
-                    self.prune_weights(index, weights)
-                else:
-                    self.delta_percentiles.append(0)
-                index += 1
+    def on_train_end(self):
+        index = 0 
+        for layer in self.model.layers:
+            if np.shape(layer.get_weights())[0] != 0:
+                weights = layer.get_weights()
+                self.get_delta_percentiles(weights)
+                self.prune_weights(index, weights)
+            else:
+                self.delta_percentiles.append(0)
+            index += 1
 
     def get_delta_percentiles(self, weights):
         delta = 0.6
