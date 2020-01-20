@@ -24,14 +24,65 @@ Entropic pruning can be utilised during training using the following:
 python train_main.py --pruning_algorithm="entropic"
 ```
 
+### Relative Threshold Pruning
+
+An implementation of the relative threshold approach to pruning devised by Ashouri et al. [4]. The value of the n-th percentile weight is selected as a threshold, with any weights with a value less than this being set to zero during the pruning process. It is possible to conduct pruning with this algorithm after training has occurred.
+
+Relative threshold pruning can be utilised during training using the following:
+```bash
+python train_main.py --pruning_algorithm="threshold"
+```
+
 ### Low Magnitude Pruning
 
-The default pruning algorithm utilised by the Tensorflow Model Optimisation Toolkit [4]. In this implementation, the smallest 50% of weights are removed from the model during training.
+The default pruning algorithm utilised by the Tensorflow Model Optimisation Toolkit [5]. In this implementation, the smallest 50% of weights are removed from the model during training.
 
 TFMOT pruning can be utilised during training using the following:
 ```bash
 python train_main.py --pruning_algorithm="tfmot"
 ```
+
+## Usage
+
+### Training
+
+```python train_main.py``` will train a seq2point model either with or without a pruning algorithm. The following options are available:
+
+```
+  --appliance_name APPLIANCE_NAME
+                        The name of the appliance to train the network with. Default is kettle. 
+                        Available are: kettle, fridge, washing machine,
+                        dishwasher, and microwave.
+  --batch_size BATCH_SIZE
+                        The batch size to use when training the network.
+                        Default is 1000.
+  --crop CROP           The number of rows of the dataset to take training
+                        data from. Default is 10000.
+  --pruning_algorithm PRUNING_ALGORITHM
+                        The pruning algorithm that the network will train
+                        with. Default is none. Available are: spp, entropic,
+                        threshold.
+```
+
+### Testing
+
+```python test_main.py``` will test a pre-trained seq2point model. The following options are available:
+
+```
+  --appliance_name APPLIANCE_NAME
+                        The name of the appliance to perform disaggregation
+                        with. Default is kettle. Available are: kettle,
+                        fridge, dishwasher, microwave.
+  --transfer_domain TRANSFER_DOMAIN
+                        The appliance used to train the model that you would
+                        like to test (i.e. transfer learning).
+  --batch_size BATCH_SIZE
+                        The batch size to use when training the network.
+                        Default is 1000.
+  --crop CROP           The number of rows of the dataset to take training
+                        data from. Default is 10000.
+```
+
 
 ## References
 
