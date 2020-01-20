@@ -13,7 +13,7 @@ def create_model():
 
     input_layer = tf.keras.layers.Input(shape=(599,))
     reshape_layer = tf.keras.layers.Reshape((1, 599, 1))(input_layer)
-    conv_layer_1 = tf.keras.layers.Convolution2D(filters=30, kernel_size=(10, 1), strides=(1, 1), padding="same", activation="relu")(reshape_layer)zz
+    conv_layer_1 = tf.keras.layers.Convolution2D(filters=30, kernel_size=(10, 1), strides=(1, 1), padding="same", activation="relu")(reshape_layer)
     conv_layer_2 = tf.keras.layers.Convolution2D(filters=30, kernel_size=(8, 1), strides=(1, 1), padding="same", activation="relu")(conv_layer_1)
     conv_layer_3 = tf.keras.layers.Convolution2D(filters=40, kernel_size=(6, 1), strides=(1, 1), padding="same", activation="relu")(conv_layer_2)
     conv_layer_4 = tf.keras.layers.Convolution2D(filters=50, kernel_size=(5, 1), strides=(1, 1), padding="same", activation="relu")(conv_layer_3)
@@ -25,7 +25,7 @@ def create_model():
     model = tf.keras.Model(inputs=input_layer, outputs=output_layer)
     return model
 
-def create_dropout__model():
+def create_dropout_model():
 
     """Specifies the structure of a seq2point model using Keras' functional API.
 
@@ -62,7 +62,7 @@ def create_lite_model(path):
         open((path + "_lite.tflite"), 'a').close()
     lite_model.save(path + "_lite.tflite")
 
-def save_model(model, path):
+def save_model(model, algorithm, path):
 
     """Saves a model to a specified location.
 
@@ -72,12 +72,12 @@ def save_model(model, path):
 
     """
 
-    if not os.path.exists (path + "_weights.h5"):
-        open((path + "_weights.h5"), 'a').close()
-    if not os.path.exists (path + ".h5"):
-        open((path + ".h5"), 'a').close()
-    model.save(path + ".h5")
-    model.save_weights(path + "_weights.h5")
+    if not os.path.exists (path + "_" + algorithm + "_weights.h5"):
+        open((path + algorithm + "_" + "_weights.h5"), 'a').close()
+    if not os.path.exists (path + "_" + algorithm + ".h5"):
+        open((path + "_" + algorithm + ".h5"), 'a').close()
+    model.save(path + "_" + algorithm + ".h5")
+    model.save_weights(path + "_" + algorithm + "_weights.h5")
 
 def load_model(model, path):
 

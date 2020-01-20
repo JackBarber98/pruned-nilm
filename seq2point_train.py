@@ -8,9 +8,10 @@ import tensorflow_model_optimization as tfmot
 from tensorflow_model_optimization import sparsity
 
 from data_feeder import InputChunkSlider
-from model_structure import create_model, save_model, load_model
+from model_structure import create_dropout_model, create_model, save_model, load_model
 from spp_callback import SPP
 from entropic_callback import Entropic
+from threshold_callback import Threshold
 
 def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
@@ -68,8 +69,6 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         """
 
-        entropic = Entropic()
-
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=15,
@@ -77,7 +76,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
             # validation_data = VALIDATION_CHUNKER.load_dataset(),
             # validation_steps=0,
             # validation_freq=0,
-            callbacks=[early_stopping, entropic])
+            callbacks=[early_stopping])
         return training_history
 
     def tfmot_pruning(model, early_stopping, steps_per_training_epoch):
@@ -97,7 +96,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         """
 
         pruning_params = {
-            'pruning_schedule': sparsity.keras.ConstantSparsity(0.8, 0),
+            'pruning_schedule': sparsity.keras.ConstantSparsity(0.5, 0),
             'block_size': (1, 1),
             'block_pooling_type': 'AVG'
         }
@@ -107,7 +106,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=15,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=10,
@@ -120,7 +119,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     def spp_pruning(model, early_stopping, steps_per_training_epoch):
 
 
-        """Trains the model with Wang et al.'s prune_low_magnitude method.
+        """Trains the model with Wang et al.'s structured probabilistic pruning method.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.
@@ -138,13 +137,72 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=15,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,
             validation_freq=2,
             callbacks=[early_stopping, spp])
         return training_history
+
+    def entropic_pruning(model, early_stopping, steps_per_training_epoch):
+
+
+        """Trains the model with the entropic pruning method.
+
+        Parameters:
+        model (tensorflow.keras.Model): The seq2point model being trained.
+        early_stopping (tensorflow.keras.callbacks.EarlyStopping): An early stopping callback to 
+        prevent overfitting.
+        steps_per_training_epoch (int): The number of training steps to occur per epoch.
+
+        Returns:
+        training_history (numpy.array): The error metrics and loss values that were calculated 
+        at the end of each training epoch.
+
+        """
+
+        entropic = Entropic()
+
+        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+            steps_per_epoch=steps_per_training_epoch,
+            epochs=15,
+            verbose=1,
+            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_steps=100,
+            validation_freq=2,
+            callbacks=[early_stopping, entropic])
+        return training_history
+
+    def threshold_pruning(model, early_stopping, steps_per_training_epoch):
+
+
+        """Trains the model with Ashouri et al.'s threshold-based pruning method.
+
+        Parameters:
+        model (tensorflow.keras.Model): The seq2point model being trained.
+        early_stopping (tensorflow.keras.callbacks.EarlyStopping): An early stopping callback to 
+        prevent overfitting.
+        steps_per_training_epoch (int): The number of training steps to occur per epoch.
+
+        Returns:
+        training_history (numpy.array): The error metrics and loss values that were calculated 
+        at the end of each training epoch.
+
+        """
+
+        threshold = Threshold()
+
+        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+            steps_per_epoch=steps_per_training_epoch,
+            epochs=15,
+            verbose=1,
+            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_steps=100,
+            validation_freq=2,
+            callbacks=[early_stopping, threshold])
+        return training_history
+
 
     # Calculate the optimum steps per epoch.
     TRAINING_CHUNKER.check_if_chunking()
@@ -159,10 +217,14 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
     if PRUNING_ALGORITHM == "default":
         training_history = default_train(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "tfmot_pruning":
+    if PRUNING_ALGORITHM == "tfmot":
         training_history = tfmot_pruning(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "spp_pruning":
+    if PRUNING_ALGORITHM == "spp":
         training_history = spp_pruning(model, early_stopping, steps_per_training_epoch)
+    if PRUNING_ALGORITHM == "entropic":
+        training_history = entropic_pruning(model, early_stopping, steps_per_training_epoch)
+    if PRUNING_ALGORITHM == "threshold":
+        training_history = threshold_pruning(model, early_stopping, steps_per_training_epoch)
 
     model.summary()
 
@@ -170,10 +232,10 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
     #plt.plot(training_history.history["val_loss"], label="Val Loss")
     plt.title('Training Metrics')
-    plt.ylabel('y')
+    plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend()
     plt.savefig(fname="training_results.png")
     plt.show()
 
-    save_model(model, "./kettle/saved_model/kettle_model")
+    save_model(model, PRUNING_ALGORITHM, "./kettle/saved_model/kettle_model")

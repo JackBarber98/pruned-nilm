@@ -20,6 +20,8 @@ class SPP(Callback):
     def __init__(self, model):
         super(SPP, self).__init__()
 
+        self.PRUNING_FREQUENCY = 5
+
         # The ratio of weights to prune.
         self.R = 1
 
@@ -37,14 +39,12 @@ class SPP(Callback):
         self.pruning_probabilities = np.zeros(self.num_of_groups)
         self.zero_count = 0
 
-    def on_train_end(self, epoch, logs={}):
-        for _ in range (0, 10):
+    def on_epoch_end(self, epoch, logs={}):
+        if epoch % self.PRUNING_FREQUENCY == 0:
             if np.sum(self.pruning_probabilities == 1) / np.size(self.pruning_probabilities) < self.R:
                 distances = self.calculate_distances(self.model.layers)
                 rankings = distances.argsort().argsort()
                 self.pruning_probabilities = self.calculate_pruning_probabilities(rankings)
-
-                print(self.pruning_probabilities)
 
                 self.prune_weights(self.pruning_probabilities)
 
