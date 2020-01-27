@@ -8,7 +8,7 @@ from data_feeder import TestingChunkSlider
 from appliance_data import appliance_data
 import matplotlib.pyplot as plt
 
-def test_model(appliance, test_domain, crop, batch_size):
+def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
     """Tests a pre-trained seq2point model in either the domain it was trained in or using transfer 
     learning Plots and saves the results.
@@ -38,13 +38,13 @@ def test_model(appliance, test_domain, crop, batch_size):
 
         data_frame = pd.read_csv(file_name, nrows=crop, header=0)
         test_input = np.round(np.array(data_frame.iloc[:, 0], float), 6)
-        test_target = np.round(np.array(data_frame.iloc[offset:-offset, 1], float), 6)
+        test_target = np.round(np.array(data_frame.iloc[offset: -offset, 1], float), 6)
         
         del data_frame
         return test_input, test_target
 
-    model_directory = "./" + appliance + "/saved_model/"
-    test_file = "./" + test_domain + "/" + test_domain + "_test_.csv"
+    model_directory = "./" + appliance + "/saved_model/" + appliance + "_model_"
+    test_file = "./" + appliance + "/" + appliance + "_test_.csv"
 
     offset = int(0.5 * 601 - 1)
 
@@ -53,9 +53,9 @@ def test_model(appliance, test_domain, crop, batch_size):
     # Initialise the model and testing generator.
     model = create_model()
 
-    model = load_model(model, model_directory)
+    model = load_model(model, algorithm, model_directory)
 
-    test_generator = TestingChunkSlider(number_of_windows=1000, inputs=test_input, offset=offset)
+    test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, offset=offset)
 
     # Calculate the optimum steps per epoch.
     steps_per_test_epoch = np.round(int(test_generator.total_size / batch_size), decimals=0)
@@ -65,24 +65,24 @@ def test_model(appliance, test_domain, crop, batch_size):
     testing_history = model.predict_generator(test_generator.load_data(), steps=steps_per_test_epoch)
     end_time = time.time()
     test_time = end_time - start_time
-    print("Test Time: ", test_time)
-    print("Num of Zeros: ", np.count_nonzero(model.layers[2].get_weights()[0]==0))
 
-    testing_history = ((testing_history * appliance_data[test_domain]["std"]) + appliance_data[test_domain]["mean"])
-    test_target = ((test_target * appliance_data[test_domain]["std"]) + appliance_data[test_domain]["mean"])
+    print("Test Time: ", test_time)
+
+    testing_history = ((testing_history * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])
+    test_target = ((test_target * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])
     test_agg = (test_input.flatten() * 814) + 522
     test_agg = test_agg[:testing_history.size]
 
     # Can't have negative energy readings - set any results below 0 to 0.
-    # test_target[test_target < 0] = 0
-    # testing_history[testing_history < 0] = 0
-    # test_input[test_input < 0] = 0
+    test_target[test_target < 0] = 0
+    testing_history[testing_history < 0] = 0
+    test_input[test_input < 0] = 0
 
     # Plot testing outcomes against ground truth.
     plt.figure(1)
     plt.plot(test_agg[offset: -offset], label="Aggregate")
-    plt.plot(test_target[0 : testing_history.size], label="Ground Truth")
-    plt.plot(testing_history, label="Testing")
+    plt.plot(test_target[:test_agg.size - (2 * offset)], label="Ground Truth")
+    plt.plot(testing_history[:test_agg.size - (2 * offset)], label="Testing")
     plt.title('Kettle Preliminary Test Results')
     plt.ylabel('Normalised Prediction')
     plt.xlabel('Testing Window')

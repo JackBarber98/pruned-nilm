@@ -72,14 +72,12 @@ def save_model(model, algorithm, path):
 
     """
 
-    if not os.path.exists (path + "_" + algorithm + "_weights.h5"):
-        open((path + algorithm + "_" + "_weights.h5"), 'a').close()
-    if not os.path.exists (path + "_" + algorithm + ".h5"):
-        open((path + "_" + algorithm + ".h5"), 'a').close()
-    model.save(path + "_" + algorithm + ".h5")
-    model.save_weights(path + "_" + algorithm + "_weights.h5")
+    if not os.path.exists (path + algorithm + ".h5"):
+        open((path + algorithm + ".h5"), 'a').close()
 
-def load_model(model, path):
+    model.save(path + algorithm + ".h5")
+
+def load_model(model, algorithm, path):
 
     """Loads a model from a specified location.
 
@@ -89,7 +87,10 @@ def load_model(model, path):
 
     """
 
-    model = tf.keras.models.load_model("./kettle/saved_model/kettle_model.h5")
+    model_name = path + algorithm + ".h5"
+    print("PATH NAME: ", model_name)
+
+    model = tf.keras.models.load_model(path + algorithm + ".h5")
     num_of_weights = model.count_params()
     print("Loaded model with ", str(num_of_weights), " weights")
     return model

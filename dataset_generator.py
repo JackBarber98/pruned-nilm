@@ -4,7 +4,7 @@ import re
 import pandas as pd
 from appliance_data import appliance_data
 
-APPLIANCE = "kettle"
+APPLIANCE = "dishwasher"
 DIRECTORY = "./refit_dataset/"
 AGG_MEAN = 522
 AGG_STD = 814
