@@ -106,7 +106,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=15,
+            epochs=1,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=10,
@@ -215,8 +215,6 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=0, verbose=1, mode="auto")
 
-    if PRUNING_ALGORITHM == "default":
-        training_history = default_train(model, early_stopping, steps_per_training_epoch)
     if PRUNING_ALGORITHM == "tfmot":
         training_history = tfmot_pruning(model, early_stopping, steps_per_training_epoch)
     if PRUNING_ALGORITHM == "spp":
@@ -225,6 +223,8 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         training_history = entropic_pruning(model, early_stopping, steps_per_training_epoch)
     if PRUNING_ALGORITHM == "threshold":
         training_history = threshold_pruning(model, early_stopping, steps_per_training_epoch)
+    else:
+        training_history = default_train(model, early_stopping, steps_per_training_epoch)
 
     model.summary()
 
