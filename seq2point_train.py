@@ -71,11 +71,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=1,
+            epochs=50,
             verbose=1,
-            # validation_data = VALIDATION_CHUNKER.load_dataset(),
-            # validation_steps=0,
-            # validation_freq=0,
+            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_steps=100,
+            validation_freq=5,
             callbacks=[early_stopping])
         return training_history
 
@@ -96,7 +96,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         """
 
         pruning_params = {
-            'pruning_schedule': sparsity.keras.ConstantSparsity(0.5, 0),
+            'pruning_schedule': sparsity.keras.ConstantSparsity(0.8, 0),
             'block_size': (1, 1),
             'block_pooling_type': 'AVG'
         }
@@ -106,11 +106,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=1,
+            epochs=50,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
-            validation_steps=10,
-            validation_freq=2,
+            validation_steps=100,
+            validation_freq=5,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
 
         model = sparsity.keras.strip_pruning(model)
@@ -137,11 +137,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=15,
+            epochs=50,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,
-            validation_freq=2,
+            validation_freq=5,
             callbacks=[early_stopping, spp])
         return training_history
 
@@ -166,11 +166,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=15,
+            epochs=50,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,
-            validation_freq=2,
+            validation_freq=5,
             callbacks=[early_stopping, entropic])
         return training_history
 
@@ -195,11 +195,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=15,
+            epochs=50,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,
-            validation_freq=2,
+            validation_freq=5,
             callbacks=[early_stopping, threshold])
         return training_history
 

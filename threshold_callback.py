@@ -22,7 +22,7 @@ class Threshold(Callback):
 
         self.delta_percentiles = []
 
-    def on_train_end(self):
+    def on_train_end(self, logs={}):
         index = 0 
         for layer in self.model.layers:
             if np.shape(layer.get_weights())[0] != 0:
@@ -34,7 +34,7 @@ class Threshold(Callback):
             index += 1
 
     def get_delta_percentiles(self, weights):
-        delta = 0.6
+        delta = 0.5
 
         percentile_value = np.percentile(weights[0], delta)
         self.delta_percentiles.append(percentile_value)
