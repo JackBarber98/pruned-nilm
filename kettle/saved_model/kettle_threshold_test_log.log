@@ -1,0 +1,24 @@
+INFO:root:Inference Time: 2.1245250701904297
+INFO:root:Pruned Weights: 5799460
+INFO:root:Compression Factor: 0.8111357193064362
+WARNING:tensorflow:sample_weight modes were coerced from
+  ...
+    to  
+  ['...']
+INFO:root:('MSE: ', '0.09017522679641843', ' MAE: ', '0.19605508')
+INFO:root:Inference Time: 2.155740737915039
+INFO:root:Pruned Weights: 5799460
+INFO:root:Compression Factor: 0.8111357193064362
+WARNING:tensorflow:sample_weight modes were coerced from
+  ...
+    to  
+  ['...']
+INFO:root:('MSE: ', '0.09017522679641843', ' MAE: ', '0.19605508')
+INFO:root:Inference Time: 2.1557412147521973
+INFO:root:Pruned Weights: 5608755
+INFO:root:Compression Factor: 0.8173461876344643
+WARNING:tensorflow:sample_weight modes were coerced from
+  ...
+    to  
+  ['...']
+INFO:root:('MSE: ', '0.21032427217811345', ' MAE: ', '0.36906642')

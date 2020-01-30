@@ -1,4 +1,5 @@
-import os 
+import os
+import logging
 import numpy as np 
 import keras
 import pandas as pd
@@ -16,7 +17,11 @@ def count_pruned_weights(model):
             layer_weights = layer.get_weights()[0].flatten()
             num_zeros += np.count_nonzero(layer_weights==0)
             num_weights += np.size(layer_weights)
-    print("Model contains ", num_zeros, " zeros. Compression factor: ", str(num_weights / num_zeros))
+    pruned_log = "Pruned Weights: " + str(num_zeros)
+    logging.info(pruned_log)
+
+    compression_log = "Compression Factor: " + str((num_weights - num_zeros) / num_weights)
+    logging.info(compression_log)
 
 def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
@@ -25,6 +30,7 @@ def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
     Parameters:
     appliance (string): The appliance that the neural network was trained to make inferences for.
+    algorithm (string): The pruning algorithm of the model to test.
     test_domain (string): The appliance that the neural network will be tested with.
     crop (int): The number of rows of the testing dataset to train the network with.
     batch_size (int): The portion of the cropped dataset to be processed by the network at once.
@@ -76,11 +82,18 @@ def test_model(appliance, algorithm, test_domain, crop, batch_size):
     end_time = time.time()
     test_time = end_time - start_time
 
-    print("Test Time: ", test_time)
+    log_file = "./" + appliance + "/saved_model/" + appliance + "_" + algorithm + "_test_log.log"
+    logging.basicConfig(filename=log_file,level=logging.INFO)
+
+    inference_log = "Inference Time: " + str(test_time)
+    logging.info(inference_log)
 
     count_pruned_weights(model)
 
     evaluation_metrics = model.evaluate(x=test_generator.load_data(), steps=steps_per_test_epoch)
+
+    metric_string = "MSE: ", str(evaluation_metrics[0]), " MAE: ", str(evaluation_metrics[3])
+    logging.info(metric_string)
 
     testing_history = ((testing_history * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])
     test_target = ((test_target * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])
@@ -101,6 +114,6 @@ def test_model(appliance, algorithm, test_domain, crop, batch_size):
     plt.ylabel('Normalised Prediction')
     plt.xlabel('Testing Window')
     plt.legend()
-    plt.savefig(fname="testing_results.png")
-    
-    plt.show()
+
+    file_path = "./" + appliance + "/saved_model/" + appliance + "_" + algorithm + "_test_figure.png"
+    plt.savefig(fname=file_path)

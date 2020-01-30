@@ -141,7 +141,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
             epochs=50,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
-            validation_steps=100,
+            validation_steps=10000,
             validation_freq=5,
             callbacks=[early_stopping, spp])
         return training_history
@@ -196,7 +196,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=35,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,

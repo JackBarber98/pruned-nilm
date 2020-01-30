@@ -1,0 +1,10 @@
+INFO:root:Inference Time: 2.1557400226593018
+INFO:root:Pruned Weights: 19527867
+INFO:root:Compression Factor: 1.5724719960454463
+INFO:root:Inference Time: 2.140151023864746
+INFO:root:Pruned Weights: 19527867
+INFO:root:Compression Factor: 1.5724719960454463
+WARNING:tensorflow:sample_weight modes were coerced from
+  ...
+    to  
+  ['...']
