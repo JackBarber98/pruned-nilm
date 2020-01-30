@@ -124,10 +124,11 @@ class TestingChunkSlider(object):
 
     """
 
-    def __init__(self, number_of_windows, inputs, offset):
+    def __init__(self, number_of_windows, inputs, targets, offset):
         self.number_of_windows = number_of_windows
         self.offset = offset
         self.inputs = inputs
+        self.targets = targets
         self.total_size = len(inputs)
 
     def load_data(self):
@@ -149,6 +150,7 @@ class TestingChunkSlider(object):
         for start_index in range(0, max_number_of_windows, self.number_of_windows):
             splice = indicies[start_index : start_index + self.number_of_windows]
             input_data = np.array([self.inputs[index : index + 2 * self.offset + 1] for index in splice])
-            yield input_data
+            target_data = self.targets[splice + self.offset].reshape(-1, 1)
+            yield input_data, target_data
 
 

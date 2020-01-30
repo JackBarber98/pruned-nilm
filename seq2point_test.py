@@ -8,6 +8,16 @@ from data_feeder import TestingChunkSlider
 from appliance_data import appliance_data
 import matplotlib.pyplot as plt
 
+def count_pruned_weights(model):
+    num_zeros = 0
+    num_weights = 0
+    for layer in model.layers:
+        if np.shape(layer.get_weights())[0] != 0:
+            layer_weights = layer.get_weights()[0].flatten()
+            num_zeros += np.count_nonzero(layer_weights==0)
+            num_weights += np.size(layer_weights)
+    print("Model contains ", num_zeros, " zeros. Compression factor: ", str(num_weights / num_zeros))
+
 def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
     """Tests a pre-trained seq2point model in either the domain it was trained in or using transfer 
@@ -55,18 +65,22 @@ def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
     model = load_model(model, algorithm, model_directory)
 
-    test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, offset=offset)
+    test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, targets=test_target, offset=offset)
 
     # Calculate the optimum steps per epoch.
     steps_per_test_epoch = np.round(int(test_generator.total_size / batch_size), decimals=0)
 
     # Test the model.
     start_time = time.time()
-    testing_history = model.predict_generator(test_generator.load_data(), steps=steps_per_test_epoch)
+    testing_history = model.predict(x=test_generator.load_data() ,steps=steps_per_test_epoch)
     end_time = time.time()
     test_time = end_time - start_time
 
     print("Test Time: ", test_time)
+
+    count_pruned_weights(model)
+
+    evaluation_metrics = model.evaluate(x=test_generator.load_data(), steps=steps_per_test_epoch)
 
     testing_history = ((testing_history * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])
     test_target = ((test_target * appliance_data[appliance]["std"]) + appliance_data[appliance]["mean"])

@@ -1,5 +1,6 @@
 import numpy as np
 from keras.callbacks import Callback
+from model_structure import create_model
 
 # STRUCTURED PROBABILISTIC PRUNING PROTOTYPE
 
@@ -39,7 +40,7 @@ class Threshold(Callback):
         percentile_value = np.percentile(weights[0], delta)
         self.delta_percentiles.append(percentile_value)
 
-    def prune_weights(self, index, weights):
+    def set_weights_to_prune(self, index, weights):
         original_shape = np.shape(weights[0])
         flat_weights = np.array(weights[0]).flatten()
 

@@ -106,14 +106,15 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=1,
             verbose=1,
             validation_data = VALIDATION_CHUNKER.load_dataset(),
             validation_steps=100,
-            validation_freq=5,
+            validation_freq=1,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
 
         model = sparsity.keras.strip_pruning(model)
+
         return training_history
 
     def spp_pruning(model, early_stopping, steps_per_training_epoch):
