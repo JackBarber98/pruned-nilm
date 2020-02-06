@@ -8,7 +8,7 @@ class Threshold(Callback):
     def __init__(self):
         super(Threshold, self).__init__()
 
-        self.PRUNING_FREQUENCY = 5
+        self.PRUNING_FREQUENCY = 1
 
         self.delta_percentiles = []
 
@@ -38,10 +38,10 @@ class Threshold(Callback):
 
         weight_index = 0 
         for weight in flat_weights:
-            if weight < 0:
+            if weight < 0 and self.delta_percentiles[index] < 0:
                 if weight > self.delta_percentiles[index]:
                     flat_weights[weight_index] = 0
-            if weight > 0:
+            if weight > 0 and self.delta_percentiles[index] > 0:
                 if weight < self.delta_percentiles[index]:
                     flat_weights[weight_index] = 0
             weight_index += 1

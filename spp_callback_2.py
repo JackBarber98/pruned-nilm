@@ -6,7 +6,7 @@ class SPP2(tf.keras.callbacks.Callback):
     def __init__(self):
         super(SPP2, self).__init__()
 
-        self.PRUNING_FREQUENCY = 5
+        self.PRUNING_FREQUENCY = 1
 
         self.R = 0.5
         self.A = 0.05
@@ -21,6 +21,9 @@ class SPP2(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.print_layers()
         self.pruning_iteration += 1
+        # print()
+        # print(self.network_probabilities)
+        # print()
 
     def manhattan_distance(self, weight_group):
         return(norm(weight_group, ord=1))
@@ -48,12 +51,13 @@ class SPP2(tf.keras.callbacks.Callback):
     def N(self, alpha):
         return - np.log10(self.u) / alpha
 
-    # [ [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4] ]
-
     def update_probabilities(self, layer_index, delta_ranks):
         filter_probabilities = []
 
-        old = self.network_probabilities
+        if self.pruning_iteration == 0:
+            old = []
+        else:
+            old = self.network_probabilities[layer_index]
 
         filter_index = 0
         for delta_rank in delta_ranks:
@@ -61,19 +65,13 @@ class SPP2(tf.keras.callbacks.Callback):
                 filter_probabilities.append(np.maximum(np.minimum(delta_rank, 1), 0))
                 self.network_probabilities.append(filter_probabilities)
             else:
-                print("OLD: ", self.network_probabilities[layer_index])
                 filter_probabilities.append(np.maximum(np.minimum(self.network_probabilities[layer_index][filter_index] + delta_rank, 1), 0))
-                print("NEW: ", filter_probabilities)
-                self.network_probabilities[layer_index] = filter_probabilities
-
-        if old == self.network_probabilities:
-            print("THEY ARE THE SAME ://")
-            print()
-
+    
+        self.network_probabilities[layer_index] = np.add(self.network_probabilities[layer_index], filter_probabilities)
 
     def print_layers(self):
         layer_index = 0
-        for layer in self.model.layers:
+        for layer in self.model.layers[:5]:
 
             weights = layer.get_weights()
             if np.shape(weights)[0] != 0:

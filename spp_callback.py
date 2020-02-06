@@ -1,121 +1,113 @@
 import numpy as np
 from numpy.linalg import norm
-import math
-from keras.callbacks import Callback
+import tensorflow as tf 
 
-# STRUCTURED PROBABILISTIC PRUNING PROTOTYPE
+# UPDATE PROBABILITIES
 
-# Currently prunes weights based on the probability that they are 
-# useless until a sparsity ratio is achieved.
-
-# Things to improve:
-#  - Compute probability for each column, not 
-#    just each filter (for Conv layers) and layers (for Dense layers). 
-#    The current implementation heavily prunes the lighter layers first.
-#
-#  - Implement Monte Carlo sampling for masking. It's currently just 
-#    uniform random distribution.
-
-class SPP(Callback):
-    def __init__(self, model):
+class SPP(tf.keras.callbacks.Callback):
+    def __init__(self):
         super(SPP, self).__init__()
 
-        self.PRUNING_FREQUENCY = 5
+        self.PRUNING_FREQUENCY = 1
 
-        # The ratio of weights to prune.
-        self.R = 1
-
-        # The greater the value, the more aggressive the pruning.
-        self.A = 0.2
-
-        # Changes the flatness of the function (higher value results in a more flat function).
+        self.R = 0.5
+        self.A = 0.05
         self.u = 0.25
 
-        self.num_of_groups = self.get_num_weight_groups(model)
+        self.l1_norms = []
+        self.ranks = []
+        self.layer_delta_ranks = []
+        self.layer_probabilities = []
 
-        self.layers = []
-        self.distances = np.array(self.num_of_groups)
-        self.rankings = np.array(self.num_of_groups)
-        self.pruning_probabilities = np.zeros(self.num_of_groups)
-        self.zero_count = 0
+        self.pruning_iteration = 0
+
+    # TODO: Stop training if all probabilities are 1 or 0
+    def on_batch_end(self, epoch, logs={}):
+        if self.pruning_iteration == 0:
+            self.spp_pruning()
+        try:
+            if np.count_nonzero(self.layer_probabilities == 1) / np.size(self.layer_probabilities) < self.R:
+                print("ratio: ", np.count_nonzero(self.layer_probabilities == 1) / np.size(self.layer_probabilities))
+                self.spp_pruning()
+            else:
+                return
+        except:
+            return
 
     def on_epoch_end(self, epoch, logs={}):
-        if epoch % self.PRUNING_FREQUENCY == 0:
-            if np.sum(self.pruning_probabilities == 1) / np.size(self.pruning_probabilities) < self.R:
-                distances = self.calculate_distances(self.model.layers)
-                rankings = distances.argsort().argsort()
-                self.pruning_probabilities = self.calculate_pruning_probabilities(rankings)
+        print(self.layer_probabilities)
+        print()
 
-                self.prune_weights(self.pruning_probabilities)
+    def spp_pruning(self):
 
-                print(self.zero_count, " weights have been pruned.")
-            else:
-                print("Pruning complete.")
-                return
+        model = self.model
 
-        return
-
-    def get_num_weight_groups(self, model):
-        group_count = 0
-
+        layer_l1_norms = []
+        layer_ranks = []
+        layer_delta_ranks = []
         for layer in model.layers:
-            weights = layer.get_weights()
-            if np.shape(weights)[0] != 0:
-                if len(np.shape(weights[0])) == 4:
-                    for _ in weights[0]:
-                        group_count += 1
-                else:
-                    group_count += 1
+            if "conv" in layer.name:
+                filterwise_weights = np.transpose(layer.get_weights()[0])
 
-        return group_count
+                filter_count = 0
+                layer_norms = []
+                for conv_filter in filterwise_weights:
+                    norm = self.calc_layer_l1_norm(conv_filter)
+                    layer_norms.append(norm)
 
-    def calculate_kernel_distances(self, weights):
-        kernel_distances = []
-        for kernel in weights[0]:
-            distance = norm(kernel[0], ord=1)
-            kernel_distances.append(distance)
+                    filter_count += 1
+                layer_l1_norms.append(layer_norms)
+                layer_ranks = self.rank_filters(layer_norms)
 
-        kernel_distances = np.asarray(kernel_distances)    
-        return kernel_distances
+                delta_ranks = self.calculate_delta_ranks(layer_ranks)
 
-    def calculate_dense_distance(self, weights):
-        return norm(weights[0], ord=1)
+                layer_delta_ranks.append(delta_ranks)
 
-    def calculate_distances(self, layers):
-        distances = []
+        self.l1_norms = layer_l1_norms
+        self.layer_delta_ranks = layer_delta_ranks
 
-        for layer in layers:
-            weights = layer.get_weights()
+        self.update_probabilities(delta_ranks)
 
-            if np.shape(weights)[0] != 0:
+        if self.pruning_iteration > 0:
+            self.prune_weights()
 
-                if len(np.shape(weights[0])) == 4:
+        self.pruning_iteration += 1
 
-                    kernel_distances = self.calculate_kernel_distances(weights)
-                    distances.append(kernel_distances)
-                else:
+    def calc_layer_l1_norm(self, conv_filter):
+        return np.linalg.norm(np.array(conv_filter).flatten(), ord=1)
 
-                    distance = self.calculate_dense_distance(weights)
-                    distances.append(distance)
+    def rank_filters(self, layer_norms):
+        return np.array(layer_norms).argsort().argsort()
 
-        distances = np.hstack(np.asarray(distances))
-        return distances
+    def alpha(self, num_of_filters):
+        return (np.log10(2) - np.log10(self.u)) / (self.R * num_of_filters)
 
-    def calculate_pruning_probabilities(self, rankings):
-        alpha = (math.log(2) - math.log(self.u)) / (self.R * np.size(rankings))
+    def N(self, alpha):
+        return - np.log10(self.u) / alpha
 
-        index = 0
-        for rank in rankings:
-            N = - math.log(self.u) / alpha
+    def calculate_delta_ranks(self, ranks):
+        alpha = self.alpha(len(ranks))
+        N = self.N(alpha)
+
+        delta_ranks = []
+        for rank in ranks:
             if rank <= N:
-                delta = self.A * math.exp(-alpha * rank)
+                delta = self.A * np.power(np.exp(1), - alpha * rank)
             else:
-                delta = (2 * self.u * self.A) - (self.A * math.exp(-alpha * ((2 * N) - rank)))
+                delta = (2 * self.u * self.A) - (self.A * np.power(np.exp(1), - alpha * ((2 * N) - rank)))
+            delta_ranks.append(delta)
+        return delta_ranks
 
-            self.pruning_probabilities[index] = np.maximum(np.minimum(self.pruning_probabilities[index] + delta, 1), 0)
+    def update_probabilities(self, delta_ranks):
 
-            index += 1
-        return self.pruning_probabilities
+        if self.pruning_iteration == 0:
+            self.layer_probabilities = self.layer_delta_ranks
+
+        layer_index = 0
+        for layer in self.layer_probabilities:
+            updated_layer_probs = np.maximum(np.minimum(np.array(layer) + self.layer_delta_ranks[layer_index], 1), 0)
+            self.layer_probabilities[layer_index] = updated_layer_probs
+            layer_index += 1
 
     def calculate_zero_indicies(self, num_desired_zeros, mask):
         flattened_mask = mask.flatten()
@@ -128,48 +120,41 @@ class SPP(Callback):
             indices.append(index)
 
         flattened_mask.put(indices, 0)
-        return flattened_mask
 
-    def prune_weights(self, pruning_probabilities):
-        self.zero_count = 0
+        return np.reshape(flattened_mask, np.shape(mask))
 
-        probability_count = 0
-        layer_count = 0
+    def prune_weights(self):
+        print()
+
+        layer_index = 0
+        conv_layer_index = 0
         for layer in self.model.layers:
-            if np.shape(layer.get_weights())[0] != 0:
-                mask = []
+            if "conv" in layer.name:
                 weights = layer.get_weights()
+                filterwise_weights = np.transpose(weights[0])
 
-                if len(np.shape(weights[0])) == 4:
-                    for kernel in weights[0]:
-                        pruning_probability = self.pruning_probabilities[probability_count]
+                filter_index = 0
+                for conv_filter in filterwise_weights:
+                    probability = self.layer_probabilities[conv_layer_index][filter_index]
+                    num_desired_zeros = int(round(probability * np.size(conv_filter)))
 
-                        num_weights = np.size(kernel) - 1
-                        num_desired_zeros = int(round(pruning_probability * num_weights))
+                    pruned_weights = self.calculate_zero_indicies(num_desired_zeros, conv_filter)
+                    filterwise_weights[filter_index] = pruned_weights
 
-                        mask = np.ones(np.shape(kernel), dtype="float32")
-                        flattened_mask = self.calculate_zero_indicies(num_desired_zeros, mask)
-                        mask = flattened_mask.reshape(np.shape(kernel))
+                    filter_index += 1
 
-                        new_kernel = np.multiply(kernel, mask)
-                        np.putmask(weights[0], weights[0] == kernel, new_kernel)
+                flat_weights = filterwise_weights.flatten()
+                # print("size: ", np.size(flat_weights))
+                # print("num zeros: ", np.count_nonzero(flat_weights == 0))
+                weights[0] = np.reshape(filterwise_weights, np.shape(weights[0]))
 
-                        probability_count += 1
+                self.model.layers[layer_index].set_weights(weights)
+            
+                conv_layer_index += 1
+            layer_index += 1
 
-                else:
-                    pruning_probability = self.pruning_probabilities[probability_count]
+    def count_close_values(self):
+        flat_probs = np.array(self.layer_probabilities).flatten()
 
-                    num_weights = np.size(weights[0]) - 1
-                    num_desired_zeros = int(round(pruning_probability * num_weights))
-
-                    mask = np.ones(np.shape(weights[0]), dtype="float32")
-                    flattened_mask = self.calculate_zero_indicies(num_desired_zeros, mask)
-                    mask = flattened_mask.reshape(np.shape(mask))
-
-                    new_weights = np.multiply(weights[0], mask)
-                    weights[0] = new_weights
-
-                    probability_count += 1
-                self.zero_count += np.count_nonzero(weights[0]==0)
-                self.model.layers[layer_count].set_weights(weights)
-            layer_count += 1    
+        np.count_nonzero(flat_probs.any() == 0.95)
+        

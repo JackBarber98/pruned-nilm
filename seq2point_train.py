@@ -9,7 +9,7 @@ from tensorflow_model_optimization import sparsity
 
 from data_feeder import InputChunkSlider
 from model_structure import create_dropout_model, create_model, save_model, load_model
-from spp_callback_2 import SPP2
+from spp_callback import SPP
 from entropic_callback import Entropic
 from threshold_callback import Threshold
 
@@ -134,16 +134,16 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         """
 
-        spp = SPP2()
+        spp = SPP()
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=20,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
-            validation_steps=10000,
-            validation_freq=5,
-            callbacks=[early_stopping, spp])
+            # validation_data = VALIDATION_CHUNKER.load_dataset(),
+            # validation_steps=100,
+            # validation_freq=5,
+            callbacks=[spp])
         return training_history
 
     def entropic_pruning(model, early_stopping, steps_per_training_epoch):
@@ -224,7 +224,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         training_history = entropic_pruning(model, early_stopping, steps_per_training_epoch)
     if PRUNING_ALGORITHM == "threshold":
         training_history = threshold_pruning(model, early_stopping, steps_per_training_epoch)
-    else:
+    if PRUNING_ALGORITHM == "default":
         training_history = default_train(model, early_stopping, steps_per_training_epoch)
 
     model.summary()
