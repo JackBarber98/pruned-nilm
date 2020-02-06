@@ -2,8 +2,6 @@ import numpy as np
 from numpy.linalg import norm
 import tensorflow as tf 
 
-# UPDATE PROBABILITIES
-
 class SPP(tf.keras.callbacks.Callback):
     def __init__(self):
         super(SPP, self).__init__()
@@ -143,18 +141,10 @@ class SPP(tf.keras.callbacks.Callback):
 
                     filter_index += 1
 
-                flat_weights = filterwise_weights.flatten()
-                # print("size: ", np.size(flat_weights))
-                # print("num zeros: ", np.count_nonzero(flat_weights == 0))
                 weights[0] = np.reshape(filterwise_weights, np.shape(weights[0]))
 
                 self.model.layers[layer_index].set_weights(weights)
             
                 conv_layer_index += 1
             layer_index += 1
-
-    def count_close_values(self):
-        flat_probs = np.array(self.layer_probabilities).flatten()
-
-        np.count_nonzero(flat_probs.any() == 0.95)
         
