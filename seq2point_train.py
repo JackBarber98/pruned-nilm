@@ -8,7 +8,7 @@ import tensorflow_model_optimization as tfmot
 from tensorflow_model_optimization import sparsity
 
 from data_feeder import InputChunkSlider
-from model_structure import create_dropout_model, create_model, save_model, load_model
+from model_structure import create_dropout_model, create_model, create_smaller_model, save_model, load_model
 from pruning_algorithms.spp_callback import SPP
 from pruning_algorithms.entropic_callback import Entropic
 from pruning_algorithms.threshold_callback import Threshold
@@ -211,10 +211,10 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
     # Compile the model with an Adam optimiser. Initialise early stopping callback that stops only 
     # if there's no improvement 2 epochs later.
-    model = create_model()
+    model = create_smaller_model()
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=0, verbose=1, mode="auto")
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
 
     if PRUNING_ALGORITHM == "tfmot":
         training_history = tfmot_pruning(model, early_stopping, steps_per_training_epoch)

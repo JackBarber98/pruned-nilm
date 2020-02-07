@@ -2,15 +2,6 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-# ROUGH VALUES (probably will be deleted).
-# prob_values = []
-# info_values = []
-# for prob_dens in freq:
-#     prob = np.trapz([prob_dens, prob_dens + 0.1], dx=0.01)
-#     info = - np.log(prob)
-#     prob_values.append(prob)
-#     info_values.append(info)
-
 class Entropic(tf.keras.callbacks.Callback):
 
     """Performs Hur et al.'s entropy-based pruning algorithm. Uses weight information and entropy to 
