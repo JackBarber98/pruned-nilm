@@ -9,9 +9,9 @@ from tensorflow_model_optimization import sparsity
 
 from data_feeder import InputChunkSlider
 from model_structure import create_dropout_model, create_model, save_model, load_model
-from spp_callback import SPP
-from entropic_callback import Entropic
-from threshold_callback import Threshold
+from pruning_algorithms.spp_callback import SPP
+from pruning_algorithms.entropic_callback import Entropic
+from pruning_algorithms.threshold_callback import Threshold
 
 def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
@@ -138,12 +138,12 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=20,
+            epochs=50,
             verbose=1,
-            # validation_data = VALIDATION_CHUNKER.load_dataset(),
-            # validation_steps=100,
-            # validation_freq=5,
-            callbacks=[spp])
+            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_steps=100,
+            validation_freq=5,
+            callbacks=[early_stopping, spp])
         return training_history
 
     def entropic_pruning(model, early_stopping, steps_per_training_epoch):
@@ -236,7 +236,8 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend()
-    plt.savefig(fname="training_results.png")
+    file_name = "./" + APPLIANCE + "/saved_model/" + APPLIANCE + "_" + PRUNING_ALGORITHM + "_training_results.png"
+    plt.savefig(fname=file_name)
     plt.show()
 
     save_model(model, PRUNING_ALGORITHM, "./" + APPLIANCE + "/saved_model/" + APPLIANCE + "_model_")

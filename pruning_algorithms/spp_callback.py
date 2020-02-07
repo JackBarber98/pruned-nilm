@@ -19,13 +19,11 @@ class SPP(tf.keras.callbacks.Callback):
 
         self.pruning_iteration = 0
 
-    # TODO: Stop training if all probabilities are 1 or 0.
     def on_batch_end(self, epoch, logs={}):
         if self.pruning_iteration == 0:
             self.spp_pruning()
         try:
-            if np.count_nonzero(self.layer_probabilities == 1) / np.size(self.layer_probabilities) < self.R:
-                print("ratio: ", np.count_nonzero(self.layer_probabilities == 1) / np.size(self.layer_probabilities))
+            if not self.ratio_is_greater_than_r() and not self.all_probabilities_integers():
                 self.spp_pruning()
             else:
                 return
@@ -33,8 +31,22 @@ class SPP(tf.keras.callbacks.Callback):
             return
 
     def on_epoch_end(self, epoch, logs={}):
-        print(self.layer_probabilities)
         print()
+        print("Proportion of Resolved Filters: ", (np.count_nonzero(np.hstack(self.layer_probabilities) == 1) + np.count_nonzero(np.hstack(self.layer_probabilities) == 0)) / np.size(np.hstack(self.layer_probabilities)))
+        print()
+
+    def ratio_is_greater_than_r(self):
+        flat_probs = np.hstack(self.layer_probabilities)
+        if np.count_nonzero(flat_probs == 1) / np.size(flat_probs) >= self.R:
+            return True
+
+    def all_probabilities_integers(self):
+        flat_probs = np.hstack(self.layer_probabilities)
+        ones = np.count_nonzero(flat_probs == 1)
+        zeros = np.count_nonzero(flat_probs == 0)
+
+        if ones + zeros == np.size(flat_probs):
+            return True
 
     def spp_pruning(self):
 
@@ -104,7 +116,7 @@ class SPP(tf.keras.callbacks.Callback):
         layer_index = 0
         for layer in self.layer_probabilities:
             updated_layer_probs = np.maximum(np.minimum(np.array(layer) + self.layer_delta_ranks[layer_index], 1), 0)
-            self.layer_probabilities[layer_index] = updated_layer_probs
+            self.layer_probabilities[layer_index] = np.array(updated_layer_probs)
             layer_index += 1
 
     def calculate_zero_indicies(self, num_desired_zeros, mask):
@@ -122,7 +134,6 @@ class SPP(tf.keras.callbacks.Callback):
         return np.reshape(flattened_mask, np.shape(mask))
 
     def prune_weights(self):
-        print()
 
         layer_index = 0
         conv_layer_index = 0
@@ -147,4 +158,3 @@ class SPP(tf.keras.callbacks.Callback):
             
                 conv_layer_index += 1
             layer_index += 1
-        

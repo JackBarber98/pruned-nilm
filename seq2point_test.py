@@ -12,16 +12,25 @@ import matplotlib.pyplot as plt
 def count_pruned_weights(model):
     num_zeros = 0
     num_weights = 0
+    num_conv_weights = 0
     for layer in model.layers:
+
         if np.shape(layer.get_weights())[0] != 0:
             layer_weights = layer.get_weights()[0].flatten()
             num_zeros += np.count_nonzero(layer_weights==0)
             num_weights += np.size(layer_weights)
-    pruned_log = "Pruned Weights: " + str(num_zeros)
-    logging.info(pruned_log)
 
-    compression_log = "Compression Factor: " + str((num_weights - num_zeros) / num_weights)
-    logging.info(compression_log)
+            if "conv" in layer.name:
+                num_conv_weights += np.size(layer_weights)
+
+    num_of_zeros = "Number of Zeros: " + str(num_zeros)
+    logging.info(num_of_zeros)
+
+    num_of_weights = "Num of Weights: " + str(num_weights)
+    logging.info(num_of_weights)
+
+    num_of_weights = "Num of Conv Weights: " + str(num_conv_weights)
+    logging.info(num_conv_weights)
 
 def test_model(appliance, algorithm, test_domain, crop, batch_size):
 
