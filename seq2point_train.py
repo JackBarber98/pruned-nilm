@@ -211,10 +211,10 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
     # Compile the model with an Adam optimiser. Initialise early stopping callback that stops only 
     # if there's no improvement 2 epochs later.
-    model = create_smaller_model()
+    model = create_model()
 
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=9, verbose=1, mode="auto")
 
     if PRUNING_ALGORITHM == "tfmot":
         training_history = tfmot_pruning(model, early_stopping, steps_per_training_epoch)

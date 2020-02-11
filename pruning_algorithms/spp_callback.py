@@ -6,7 +6,7 @@ class SPP(tf.keras.callbacks.Callback):
     def __init__(self):
         super(SPP, self).__init__()
 
-        self.PRUNING_FREQUENCY = 1
+        self.PRUNING_FREQUENCY = 101
 
         self.R = 0.5
         self.A = 0.05
@@ -20,15 +20,17 @@ class SPP(tf.keras.callbacks.Callback):
         self.pruning_iteration = 0
 
     def on_batch_end(self, epoch, logs={}):
-        if self.pruning_iteration == 0:
-            self.spp_pruning()
-        try:
-            if not self.ratio_is_greater_than_r() and not self.all_probabilities_integers():
+        if epoch <= 49: 
+            if self.pruning_iteration == 0:
                 self.spp_pruning()
-            else:
-                return
-        except:
-            return
+            try:
+                if not self.ratio_is_greater_than_r() and not self.all_probabilities_integers() and self.pruning_iteration % self.PRUNING_FREQUENCY == 0:
+                    self.spp_pruning()
+                else:
+                    pass
+            except:
+                pass
+            self.pruning_iteration += 1
 
     def on_epoch_end(self, epoch, logs={}):
         print()
@@ -80,8 +82,6 @@ class SPP(tf.keras.callbacks.Callback):
 
         if self.pruning_iteration > 0:
             self.prune_weights()
-
-        self.pruning_iteration += 1
 
     def calc_layer_l1_norm(self, conv_filter):
         return np.linalg.norm(np.array(conv_filter).flatten(), ord=1)
