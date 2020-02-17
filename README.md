@@ -2,7 +2,41 @@
 
 This code base implements three contemporary pruning algorithms designed to reduce the size of a typical sequence-to-point deep learning model [1] for use in energy disaggreation / non-intrusive load monitoring.
 
-Support is also provided for transfer learning. 
+Support is also provided for transfer learning.
+
+## Prerequisites
+
+Numpy, Pandas, and Matplotlib are required for this project:
+```bash
+pip install numpy && pip install pandas && pip install matplotlib
+```
+
+TensorFlow 2.0 GPU is also required for GPU-accelerated training and inferencing:
+```bash
+pip install tensorflow-gpu
+```
+
+Lightweight models are produced using the Tensorflow Model Optimisation Toolkit: 
+```bash
+pip install tensorflow-model-optimization-toolkit
+```
+
+## Getting Started
+
+To download this project, run the following command:
+```bash
+git clone https://github.com/JackBarber98/prunedNILM.git
+```
+
+The REFIT: Electrical Load Measurements Dataset (Cleaned) is required to create training, validation, and testing datasets. This can be downloaded from https://pureportal.strath.ac.uk/en/datasets/refit-electrical-load-measurements-cleaned. Extract the files using 7-Zip and place all the CSV files in a folder titled "refit-dataset" in the root of the project.
+
+To generate the required datasets, run the following command:
+
+```bash
+python dataset_generator.py --appliance_name="kettle"
+```
+
+Note: A new dataset must be created for each appliance you wish to train a model for.
 
 ## Pruning Algorithms
 
