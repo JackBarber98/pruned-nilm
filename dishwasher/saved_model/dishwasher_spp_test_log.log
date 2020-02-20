@@ -1,5 +1,0 @@
-INFO:root:Inference Time: 0.13366150856018066
-INFO:root:Number of Zeros: 5504
-INFO:root:Num of Weights: 30707024
-INFO:root:37200
-INFO:root:('MSE: ', '0.07528532296419144', ' MAE: ', '0.27436966')

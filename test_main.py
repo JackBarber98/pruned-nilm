@@ -1,6 +1,6 @@
 import argparse
 from remove_space import remove_space
-from seq2point_test import test_model
+from seq2point_test import Tester
 
 parser = argparse.ArgumentParser(description="Train a pruned neural network for energy disaggregation. ")
 
@@ -12,4 +12,5 @@ parser.add_argument("--pruning_algorithm", type=remove_space, default="default",
 
 arguments = parser.parse_args()
 
-test_model(arguments.appliance_name, arguments.pruning_algorithm, arguments.transfer_domain, arguments.crop, arguments.batch_size)
+tester = Tester(arguments.appliance_name, arguments.pruning_algorithm, arguments.transfer_domain, arguments.crop, arguments.batch_size)
+tester.test_model()

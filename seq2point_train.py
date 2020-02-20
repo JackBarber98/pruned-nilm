@@ -97,7 +97,7 @@ class Trainer():
 
         training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=1,
             verbose=1,
             validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,

@@ -1,9 +1,0 @@
-INFO:root:Inference Time: 2.9992949962615967
-INFO:root:Number of Zeros: 1251
-INFO:root:Num of Weights: 30707024
-INFO:root:37200
-WARNING:tensorflow:sample_weight modes were coerced from
-  ...
-    to  
-  ['...']
-INFO:root:('MSE: ', '0.07794679834525596', ' MAE: ', '0.07266237')
