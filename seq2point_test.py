@@ -11,30 +11,30 @@ import matplotlib.pyplot as plt
 
 class Tester():
     def __init__(self, appliance, pruning_algorithm, transfer_domain, crop, batch_size):
-        self.appliance = appliance
-        self.pruning_algorithm = pruning_algorithm
-        self.transfer_domain = transfer_domain
-        self.crop = crop
-        self.batch_size = batch_size
-        self.window_size = 601
-        self.window_offset = int(0.5 * self.window_size - 1)
+        self.__appliance = self.__appliance
+        self.__pruning_algorithm = pruning_algorithm
+        self.__transfer_domain = transfer_domain
+        self.__crop = crop
+        self.__batch_size = batch_size
+        self.__window_size = 601
+        self.__window_offset = int(0.5 * self.__window_size - 1)
 
-        self.model_directory = "./" + appliance + "/saved_model/" + appliance + "_model_"
-        self.test_directory = "./" + appliance + "/" + appliance + "_test_.csv"
+        self.__model_directory = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_model_"
+        self.__test_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
 
-        log_file = "./" + self.appliance + "/saved_model/" + self.appliance + "_" + self.pruning_algorithm + "_test_log.log"
+        log_file = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log"
         logging.basicConfig(filename=log_file,level=logging.INFO)
 
     def test_model(self):
-        test_input, test_target = self.load_dataset(self.test_directory)
+        test_input, test_target = self.load_dataset(self.__test_directory)
 
         model = create_model()
-        model = load_model(self.model_directory, self.pruning_algorithm, self.model_directory)
+        model = load_model(self.__model_directory, self.__pruning_algorithm, self.__model_directory)
 
-        test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, targets=test_target, offset=self.window_offset)
+        test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, targets=test_target, offset=self.__window_offset)
 
         # Calculate the optimum steps per epoch.
-        steps_per_test_epoch = np.round(int(test_generator.total_size / self.batch_size), decimals=0)
+        steps_per_test_epoch = np.round(int(test_generator.total_size / self.__batch_size), decimals=0)
 
         # Test the model.
         start_time = time.time()
@@ -60,9 +60,9 @@ class Tester():
 
         """
 
-        data_frame = pd.read_csv(directory, nrows=self.crop, header=0)
+        data_frame = pd.read_csv(directory, nrows=self.__crop, header=0)
         test_input = np.round(np.array(data_frame.iloc[:, 0], float), 6)
-        test_target = np.round(np.array(data_frame.iloc[self.window_offset: -self.window_offset, 1], float), 6)
+        test_target = np.round(np.array(data_frame.iloc[self.__window_offset: -self.__window_offset, 1], float), 6)
         
         del data_frame
         return test_input, test_target
@@ -96,8 +96,8 @@ class Tester():
         logging.info(num_of_weights)
 
     def plot_results(self, testing_history, test_input, test_target):
-        testing_history = ((testing_history * appliance_data[self.appliance]["std"]) + appliance_data[self.appliance]["mean"])
-        test_target = ((test_target * appliance_data[self.appliance]["std"]) + appliance_data[self.appliance]["mean"])
+        testing_history = ((testing_history * appliance_data[self.__appliance]["std"]) + appliance_data[self.__appliance]["mean"])
+        test_target = ((test_target * appliance_data[self.__appliance]["std"]) + appliance_data[self.__appliance]["mean"])
         test_agg = (test_input.flatten() * 814) + 522
         test_agg = test_agg[:testing_history.size]
 
@@ -108,13 +108,13 @@ class Tester():
 
         # Plot testing outcomes against ground truth.
         plt.figure(1)
-        plt.plot(test_agg[self.window_offset: -self.window_offset], label="Aggregate")
-        plt.plot(test_target[:test_agg.size - (2 * self.window_offset)], label="Ground Truth")
-        plt.plot(testing_history[:test_agg.size - (2 * self.window_offset)], label="Testing")
+        plt.plot(test_agg[self.__window_offset: -self.__window_offset], label="Aggregate")
+        plt.plot(test_target[:test_agg.size - (2 * self.__window_offset)], label="Ground Truth")
+        plt.plot(testing_history[:test_agg.size - (2 * self.__window_offset)], label="Testing")
         plt.title('Kettle Preliminary Test Results')
         plt.ylabel('Normalised Prediction')
         plt.xlabel('Testing Window')
         plt.legend()
 
-        file_path = "./" + self.appliance + "/saved_model/" + self.appliance + "_" + self.pruning_algorithm + "_test_figure.png"
+        file_path = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_figure.png"
         plt.savefig(fname=file_path)

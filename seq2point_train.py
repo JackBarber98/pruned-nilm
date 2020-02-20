@@ -15,31 +15,31 @@ from pruning_algorithms.threshold_callback import Threshold
 
 class Trainer():
     def __init__(self, appliance, pruning_algorithm, batch_size, crop):
-        self.appliance = appliance
-        self.pruning_algorithm = pruning_algorithm
-        self.batch_size = batch_size
-        self.crop = crop
-        self.sequence_length = 601
-        self.window_offset = int((0.5 * self.sequence_length) - 1)
-        self.max_chunk_size = 5 * 10 ** 2
+        self.__appliance = appliance
+        self.__pruning_algorithm = pruning_algorithm
+        self.__batch_size = batch_size
+        self.__crop = crop
+        self.__sequence_length = 601
+        self.__window_offset = int((0.5 * self.__sequence_length) - 1)
+        self.__max_chunk_size = 5 * 10 ** 2
 
         # Directories of the training and validation files. Always has the structure 
         # ./{appliance_name}/{appliance_name}_train_.csv for training or 
         # ./{appliance_name}/{appliance_name}_validation_.csv
-        self.__training_directory = "./" + self.appliance + "/" + self.appliance + "_test_.csv"
-        self.__validation_directory = "./" + self.appliance + "/" + self.appliance + "_test_.csv"
+        self.__training_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
+        self.__validation_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
 
-        self.training_chunker = InputChunkSlider(file_name=self.__training_directory, 
-                                        chunk_size=self.max_chunk_size, 
-                                        batch_size=self.batch_size, 
-                                        crop=self.crop, shuffle=True, 
-                                        offset=self.window_offset, 
+        self.__training_chunker = InputChunkSlider(file_name=self.__training_directory, 
+                                        chunk_size=self.__max_chunk_size, 
+                                        batch_size=self.__batch_size, 
+                                        crop=self.__crop, shuffle=True, 
+                                        offset=self.__window_offset, 
                                         ram_threshold=5*10**5)
-        self.validation_chunker = InputChunkSlider(file_name=self.__validation_directory, 
-                                            chunk_size=self.max_chunk_size, 
-                                            batch_size=self.batch_size, 
-                                            crop=self.crop, shuffle=True, 
-                                            offset=self.window_offset, 
+        self.__validation_chunker = InputChunkSlider(file_name=self.__validation_directory, 
+                                            chunk_size=self.__max_chunk_size, 
+                                            batch_size=self.__batch_size, 
+                                            crop=self.__crop, shuffle=True, 
+                                            offset=self.__window_offset, 
                                             ram_threshold=5*10**5)
 
     def train_model(self):
@@ -56,26 +56,26 @@ class Trainer():
         """
 
         # Calculate the optimum steps per epoch.
-        self.training_chunker.check_if_chunking()
-        steps_per_training_epoch = np.round(int(self.training_chunker.total_size / self.batch_size), decimals=0)
+        self.__training_chunker.check_if_chunking()
+        steps_per_training_epoch = np.round(int(self.__training_chunker.total_size / self.__batch_size), decimals=0)
         model = create_smaller_model()
 
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
         early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
 
-        if self.pruning_algorithm == "tfmot":
+        if self.__pruning_algorithm == "tfmot":
             training_history = self.tfmot_pruning(model, early_stopping, steps_per_training_epoch)
-        if self.pruning_algorithm == "spp":
+        if self.__pruning_algorithm == "spp":
             training_history = self.spp_pruning(model, early_stopping, steps_per_training_epoch)
-        if self.pruning_algorithm == "entropic":
+        if self.__pruning_algorithm == "entropic":
             training_history = self.entropic_pruning(model, early_stopping, steps_per_training_epoch)
-        if self.pruning_algorithm == "threshold":
+        if self.__pruning_algorithm == "threshold":
             training_history = self.threshold_pruning(model, early_stopping, steps_per_training_epoch)
-        if self.pruning_algorithm == "default":
+        if self.__pruning_algorithm == "default":
             training_history = self.default_train(model, early_stopping, steps_per_training_epoch)
 
         model.summary()
-        save_model(model, self.pruning_algorithm, "./" + self.appliance + "/saved_model/" + self.appliance + "_model_")
+        save_model(model, self.__pruning_algorithm, "./" + self.__appliance + "/saved_model/" + self.__appliance + "_model_")
 
         self.plot_training_results(training_history)
 
@@ -95,11 +95,11 @@ class Trainer():
 
         """
 
-        training_history = model.fit_generator(self.training_chunker.load_dataset(),
+        training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=1,
             verbose=1,
-            validation_data = self.validation_chunker.load_dataset(),
+            validation_data = self.__validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping])
@@ -130,11 +130,11 @@ class Trainer():
         model = sparsity.keras.prune_low_magnitude(model, **pruning_params)
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "mae"])
 
-        training_history = model.fit_generator(self.training_chunker.load_dataset(),
+        training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=1,
             verbose=1,
-            validation_data = self.validation_chunker.load_dataset(),
+            validation_data = self.__validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=1,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
@@ -162,11 +162,11 @@ class Trainer():
 
         spp = SPP()
 
-        training_history = model.fit_generator(self.training_chunker.load_dataset(),
+        training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=50,
             verbose=1,
-            validation_data = self.validation_chunker.load_dataset(),
+            validation_data = self.__validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, spp])
@@ -191,11 +191,11 @@ class Trainer():
 
         entropic = Entropic()
 
-        training_history = model.fit_generator(self.training_chunker.load_dataset(),
+        training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=50,
             verbose=1,
-            validation_data = self.validation_chunker.load_dataset(),
+            validation_data = self.__validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, entropic])
@@ -220,11 +220,11 @@ class Trainer():
 
         threshold = Threshold()
 
-        training_history = model.fit_generator(self.training_chunker.load_dataset(),
+        training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=35,
             verbose=1,
-            validation_data = self.validation_chunker.load_dataset(),
+            validation_data = self.__validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, threshold])
@@ -237,5 +237,5 @@ class Trainer():
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend()
-        file_name = "./" + self.appliance + "/saved_model/" + self.appliance + "_" + self.pruning_algorithm + "_training_results.png"
+        file_name = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_training_results.png"
         plt.savefig(fname=file_name)
