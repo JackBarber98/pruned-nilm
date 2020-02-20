@@ -1,6 +1,6 @@
 import argparse
 from remove_space import remove_space
-from seq2point_train import train_model
+from seq2point_train import Trainer
 
 parser = argparse.ArgumentParser(description="Train a pruned neural network for energy disaggregation. ")
 
@@ -11,5 +11,6 @@ parser.add_argument("--pruning_algorithm", type=remove_space, default="default",
 
 arguments = parser.parse_args()
 
-train_model(arguments.appliance_name, arguments.pruning_algorithm, arguments.batch_size, arguments.crop)
+trainer = Trainer(arguments.appliance_name, arguments.pruning_algorithm, arguments.batch_size, arguments.crop)
+trainer.train_model()
 

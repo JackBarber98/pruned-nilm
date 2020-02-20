@@ -8,7 +8,7 @@ class Entropic(tf.keras.callbacks.Callback):
     determine which weights to prune.
 
     Parameters:
-    PRUNING_FREQUENCY (int): The intervals between pruning is performed (in epochs).
+    pruning_frequency (int): The intervals between pruning is performed (in epochs).
     means (list): The mean of the weights of each layer.
     stds (list): The standards deviation of the weights of each layer.
     layer_probabilities (list): A 2D list of the probability of a weight existing.
@@ -20,24 +20,31 @@ class Entropic(tf.keras.callbacks.Callback):
     def __init__(self):
         super(Entropic, self).__init__()
 
-        self.PRUNING_FREQUENCY = 5
+        self.__pruning_frequency = 5
 
-        self.means = []
-        self.stds = []
+        self.__means = []
+        self.__stds = []
 
-        self.layer_probabilities = []
-        self.layer_entropies = []
-        self.layer_information = []
+        self.__layer_probabilities = []
+        self.__layer_entropies = []
+        self.__layer_information = []
 
     def on_epoch_end(self, epoch, logs={}):
 
-        self.means = []
-        self.stds = []
-        self.layer_probabilities = []
-        self.layer_information = []
-        self.layer_entropies = []
+        """Determines when pruning should occur and triggers each step of the pruning process.
 
-        if epoch % self.PRUNING_FREQUENCY == 0:
+        Parameters:
+        epoch (int): The current training epoch.
+
+        """
+
+        self.__means = []
+        self.__stds = []
+        self.__layer_probabilities = []
+        self.__layer_information = []
+        self.__layer_entropies = []
+
+        if epoch % self.__pruning_frequency == 0:
             index = 0 
             for layer in self.model.layers:
                 weights = layer.get_weights()
@@ -61,21 +68,27 @@ class Entropic(tf.keras.callbacks.Callback):
 
         """
 
-        distribution_values = np.random.normal(self.means[index], self.stds[index], np.size(weights))
+        distribution_values = np.random.normal(self.__means[index], self.__stds[index], np.size(weights))
         _, bins, _ = plt.hist(distribution_values, int(np.size(weights) - 1), density=True)
 
-        probability_densities = 1 / (self.stds[index] * np.sqrt(2 * np.pi)) * np.exp( - (bins - self.means[index]) ** 2 / (2 * self.stds[index] ** 2))
+        probability_densities = 1 / (self.__stds[index] * np.sqrt(2 * np.pi)) * np.exp( - (bins - self.__means[index]) ** 2 / (2 * self.__stds[index] ** 2))
         return probability_densities
 
     def generate_pruning_stats(self, weights):
-        if np.shape(weights)[0] != 0:
+        """Calculates the mean and standard deviation of weights in a layer
 
-            self.means.append(np.mean(weights[0]))
-            self.stds.append(np.std(weights[0]))
+        Parameters:
+        weights (numpy.ndarray): An array of all non-bias weights in a layer.
+
+        """
+
+        if np.shape(weights)[0] != 0:
+            self.__means.append(np.mean(weights[0]))
+            self.__stds.append(np.std(weights[0]))
 
         else:
-            self.means.append(0)
-            self.stds.append(0)
+            self.__means.append(0)
+            self.__stds.append(0)
 
     def calculate_probability_and_information_values(self, weights, index):
 
@@ -83,7 +96,7 @@ class Entropic(tf.keras.callbacks.Callback):
         information that weight holds.
 
         Parameters:
-        weights (numpy.array): The layer's weights.
+        weights (numpy.ndarray): An array of all non-bias weights in a layer.
         index (int): The index of the layer in the model's layers array.
 
         """
@@ -99,34 +112,34 @@ class Entropic(tf.keras.callbacks.Callback):
                 information_value = - np.log10(probability)
                 information_values.append(information_value)
 
-            self.layer_probabilities.append(probability_values)
-            self.layer_information.append(information_values)
+            self.__layer_probabilities.append(probability_values)
+            self.__layer_information.append(information_values)
         else:
-            self.layer_probabilities.append(0)
-            self.layer_information.append(0)
+            self.__layer_probabilities.append(0)
+            self.__layer_information.append(0)
 
     def calculate_weight_entropy(self, weights, index):
 
         """Calculates the entropy of each layer of the network.
 
         Parameters:
-        weights (numpy.array): The layer's weights.
+        weights (numpy.ndarray): An array of all non-bias weights in a layer.
         index (int): The index of the layer in the model's layers array.
 
         """
 
         if np.shape(weights)[0] != 0:
-            entropies = np.log(self.stds[index] * np.sqrt(2 * np.pi * np.exp(1)))
+            entropies = np.log(self.__stds[index] * np.sqrt(2 * np.pi * np.exp(1)))
         else:
             entropies = 0
-        self.layer_entropies.append(entropies)
+        self.__layer_entropies.append(entropies)
 
     def prune_weights(self, layer, weights, index):
 
         """Sets the weights deemed to be redundant to zero.
 
         Parameters:
-        weights (numpy.array): The layer's weights.
+        weights (numpy.ndarray): An array of all non-bias weights in a layer.
         index (int): The index of the layer in the model's layers array.
 
         """
@@ -137,7 +150,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
             weight_index = 0
             for _ in flattened_weights:
-                if self.layer_information[index][weight_index] < - self.layer_entropies[index] * 1.1:
+                if self.__layer_information[index][weight_index] < - self.__layer_entropies[index] * 1.1:
                     flattened_weights[weight_index] = 0
                 weight_index += 1
 

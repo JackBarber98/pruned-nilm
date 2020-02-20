@@ -13,47 +13,73 @@ from pruning_algorithms.spp_callback import SPP
 from pruning_algorithms.entropic_callback import Entropic
 from pruning_algorithms.threshold_callback import Threshold
 
-def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
+class Trainer():
+    def __init__(self, appliance, pruning_algorithm, batch_size, crop):
+        self.appliance = appliance
+        self.pruning_algorithm = pruning_algorithm
+        self.batch_size = batch_size
+        self.crop = crop
+        self.sequence_length = 601
+        self.window_offset = int((0.5 * self.sequence_length) - 1)
+        self.max_chunk_size = 5 * 10 ** 2
 
-    """Trains an energy disaggregation model using a user-selected pruning algorithm (default is no pruning). 
-    Plots and saves the resulting model.
+        # Directories of the training and validation files. Always has the structure 
+        # ./{appliance_name}/{appliance_name}_train_.csv for training or 
+        # ./{appliance_name}/{appliance_name}_validation_.csv
+        self.__training_directory = "./" + self.appliance + "/" + self.appliance + "_test_.csv"
+        self.__validation_directory = "./" + self.appliance + "/" + self.appliance + "_test_.csv"
 
-    Parameters:
-    appliance (string): The appliance that the neural network will be able to infer energy readings for.
-    pruning_algorithm (string): The pruning algorithm that will be applied when training the network.
-    crop (int): The number of rows of the training dataset to train the network with.
-    batch_size (int): The portion of the cropped dataset to be processed by the network at once.
-
-    """
-
-    # Static maximum chunk.
-    SIZE_OF_CHUNK = 5 * 10 ** 2
-
-    # Directories of the training and validation files. Always has the structure 
-    # ./{appliance_name}/{appliance_name}_train_.csv for training or 
-    # ./{appliance_name}/{appliance_name}_validation_.csv
-    TRAINING_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv"
-    VALIDATION_DIRECTORY = "./" + APPLIANCE + "/" + APPLIANCE + "_test_.csv"
-
-    WINDOW_OFFSET = int((0.5 * 601 ) - 1)
-
-    # Generator function to produce batches of training data.
-    TRAINING_CHUNKER = InputChunkSlider(file_name=TRAINING_DIRECTORY, 
-                                        chunk_size=SIZE_OF_CHUNK, 
-                                        batch_size=BATCH_SIZE, 
-                                        crop=CROP, shuffle=True, 
-                                        offset=WINDOW_OFFSET, 
+        self.training_chunker = InputChunkSlider(file_name=self.__training_directory, 
+                                        chunk_size=self.max_chunk_size, 
+                                        batch_size=self.batch_size, 
+                                        crop=self.crop, shuffle=True, 
+                                        offset=self.window_offset, 
                                         ram_threshold=5*10**5)
-
-    # Generator function to produce batches of validation data.
-    VALIDATION_CHUNKER = InputChunkSlider(file_name=VALIDATION_DIRECTORY, 
-                                            chunk_size=SIZE_OF_CHUNK, 
-                                            batch_size=BATCH_SIZE, 
-                                            crop=CROP, shuffle=True, 
-                                            offset=WINDOW_OFFSET, 
+        self.validation_chunker = InputChunkSlider(file_name=self.__validation_directory, 
+                                            chunk_size=self.max_chunk_size, 
+                                            batch_size=self.batch_size, 
+                                            crop=self.crop, shuffle=True, 
+                                            offset=self.window_offset, 
                                             ram_threshold=5*10**5)
 
-    def default_train(model, early_stopping, steps_per_training_epoch):
+    def train_model(self):
+
+        """Trains an energy disaggregation model using a user-selected pruning algorithm (default is no pruning). 
+        Plots and saves the resulting model.
+
+        Parameters:
+        appliance (string): The appliance that the neural network will be able to infer energy readings for.
+        pruning_algorithm (string): The pruning algorithm that will be applied when training the network.
+        crop (int): The number of rows of the training dataset to train the network with.
+        batch_size (int): The portion of the cropped dataset to be processed by the network at once.
+
+        """
+
+        # Calculate the optimum steps per epoch.
+        self.training_chunker.check_if_chunking()
+        steps_per_training_epoch = np.round(int(self.training_chunker.total_size / self.batch_size), decimals=0)
+        model = create_smaller_model()
+
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
+
+        if self.pruning_algorithm == "tfmot":
+            training_history = self.tfmot_pruning(model, early_stopping, steps_per_training_epoch)
+        if self.pruning_algorithm == "spp":
+            training_history = self.spp_pruning(model, early_stopping, steps_per_training_epoch)
+        if self.pruning_algorithm == "entropic":
+            training_history = self.entropic_pruning(model, early_stopping, steps_per_training_epoch)
+        if self.pruning_algorithm == "threshold":
+            training_history = self.threshold_pruning(model, early_stopping, steps_per_training_epoch)
+        if self.pruning_algorithm == "default":
+            training_history = self.default_train(model, early_stopping, steps_per_training_epoch)
+
+        model.summary()
+        save_model(model, self.pruning_algorithm, "./" + self.appliance + "/saved_model/" + self.appliance + "_model_")
+
+        self.plot_training_results(training_history)
+
+    def default_train(self, model, early_stopping, steps_per_training_epoch):
 
         """The default training method the neural network will use. No pruning occurs.
 
@@ -69,17 +95,17 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         """
 
-        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+        training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=50,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping])
         return training_history
 
-    def tfmot_pruning(model, early_stopping, steps_per_training_epoch):
+    def tfmot_pruning(self, model, early_stopping, steps_per_training_epoch):
 
         """Trains the model with TensorFlow Optimisation Tookit's prune_low_magnitude method.
 
@@ -104,11 +130,11 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
         model = sparsity.keras.prune_low_magnitude(model, **pruning_params)
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "mae"])
 
-        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+        training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=1,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=1,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
@@ -117,7 +143,7 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         return training_history
 
-    def spp_pruning(model, early_stopping, steps_per_training_epoch):
+    def spp_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
         """Trains the model with Wang et al.'s structured probabilistic pruning method.
@@ -136,17 +162,17 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         spp = SPP()
 
-        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+        training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=50,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, spp])
         return training_history
 
-    def entropic_pruning(model, early_stopping, steps_per_training_epoch):
+    def entropic_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
         """Trains the model with the entropic pruning method.
@@ -165,17 +191,17 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         entropic = Entropic()
 
-        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+        training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=50,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, entropic])
         return training_history
 
-    def threshold_pruning(model, early_stopping, steps_per_training_epoch):
+    def threshold_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
         """Trains the model with Ashouri et al.'s threshold-based pruning method.
@@ -194,50 +220,22 @@ def train_model(APPLIANCE, PRUNING_ALGORITHM, BATCH_SIZE, CROP):
 
         threshold = Threshold()
 
-        training_history = model.fit_generator(TRAINING_CHUNKER.load_dataset(),
+        training_history = model.fit_generator(self.training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
             epochs=35,
             verbose=1,
-            validation_data = VALIDATION_CHUNKER.load_dataset(),
+            validation_data = self.validation_chunker.load_dataset(),
             validation_steps=100,
             validation_freq=5,
             callbacks=[early_stopping, threshold])
         return training_history
 
-
-    # Calculate the optimum steps per epoch.
-    TRAINING_CHUNKER.check_if_chunking()
-    steps_per_training_epoch = np.round(int(TRAINING_CHUNKER.total_size / BATCH_SIZE), decimals=0)
-
-    # Compile the model with an Adam optimiser. Initialise early stopping callback that stops only 
-    # if there's no improvement 2 epochs later.
-    model = create_smaller_model()
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
-
-    if PRUNING_ALGORITHM == "tfmot":
-        training_history = tfmot_pruning(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "spp":
-        training_history = spp_pruning(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "entropic":
-        training_history = entropic_pruning(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "threshold":
-        training_history = threshold_pruning(model, early_stopping, steps_per_training_epoch)
-    if PRUNING_ALGORITHM == "default":
-        training_history = default_train(model, early_stopping, steps_per_training_epoch)
-
-    model.summary()
-
-    # Plot the monitored metrics and save.
-    plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
-    #plt.plot(training_history.history["val_loss"], label="Val Loss")
-    plt.title('Training Metrics')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend()
-    file_name = "./" + APPLIANCE + "/saved_model/" + APPLIANCE + "_" + PRUNING_ALGORITHM + "_training_results.png"
-    plt.savefig(fname=file_name)
-    plt.show()
-
-    save_model(model, PRUNING_ALGORITHM, "./" + APPLIANCE + "/saved_model/" + APPLIANCE + "_model_")
+    def plot_training_results(self, training_history):
+        # Plot the monitored metrics and save.
+        plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
+        plt.title('Training Metrics')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend()
+        file_name = "./" + self.appliance + "/saved_model/" + self.appliance + "_" + self.pruning_algorithm + "_training_results.png"
+        plt.savefig(fname=file_name)
