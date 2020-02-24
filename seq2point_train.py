@@ -90,7 +90,7 @@ class Trainer():
         steps_per_training_epoch (int): The number of training steps to occur per epoch.
 
         Returns:
-        training_history (numpy.array): The error metrics and loss values that were calculated 
+        training_history (numpy.ndarray): The error metrics and loss values that were calculated 
         at the end of each training epoch.
 
         """
@@ -116,7 +116,7 @@ class Trainer():
         steps_per_training_epoch (int): The number of training steps to occur per epoch.
 
         Returns:
-        training_history (numpy.array): The error metrics and loss values that were calculated 
+        training_history (numpy.ndarray): The error metrics and loss values that were calculated 
         at the end of each training epoch.
 
         """
@@ -155,7 +155,7 @@ class Trainer():
         steps_per_training_epoch (int): The number of training steps to occur per epoch.
 
         Returns:
-        training_history (numpy.array): The error metrics and loss values that were calculated 
+        training_history (numpy.ndarray): The error metrics and loss values that were calculated 
         at the end of each training epoch.
 
         """
@@ -184,7 +184,7 @@ class Trainer():
         steps_per_training_epoch (int): The number of training steps to occur per epoch.
 
         Returns:
-        training_history (numpy.array): The error metrics and loss values that were calculated 
+        training_history (numpy.ndarray): The error metrics and loss values that were calculated 
         at the end of each training epoch.
 
         """
@@ -213,7 +213,7 @@ class Trainer():
         steps_per_training_epoch (int): The number of training steps to occur per epoch.
 
         Returns:
-        training_history (numpy.array): The error metrics and loss values that were calculated 
+        training_history (numpy.ndarray): The error metrics and loss values that were calculated 
         at the end of each training epoch.
 
         """
@@ -231,11 +231,19 @@ class Trainer():
         return training_history
 
     def plot_training_results(self, training_history):
-        # Plot the monitored metrics and save.
+
+        """ Plots and saves a graph of training loss against epoch.
+
+        Parameters:
+        training_history (numpy.ndarray): A timeseries of loss against epoch count.
+
+        """
+
         plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
         plt.title('Training Metrics')
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend()
+
         file_name = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_training_results.png"
         plt.savefig(fname=file_name)

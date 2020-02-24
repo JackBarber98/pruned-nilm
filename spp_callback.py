@@ -64,8 +64,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def ratio_is_greater_than_r(self):
 
-        """ Determines whether R filters have been pruned from the network.
-        """
+        """ Determines whether R filters have been pruned from the network. """
 
         flat_probs = np.hstack(self.layer_probabilities)
         if np.count_nonzero(flat_probs == 1) / np.size(flat_probs) >= self.R:
@@ -73,8 +72,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def all_probabilities_integers(self):
 
-        """ Checks whether the algorithm has determined exactly which filters to keep and which to prune.
-        """
+        """ Checks whether the algorithm has determined exactly which filters to keep and which to prune. """
 
         flat_probs = np.hstack(self.layer_probabilities)
         ones = np.count_nonzero(flat_probs == 1)
@@ -85,8 +83,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def spp_pruning(self):
         
-        """ Performs all the steps required to update the pruning probabilities of each convolutional layer.
-        """
+        """ Performs all the steps required to update the pruning probabilities of each convolutional layer. """
 
         model = self.model
 
@@ -149,6 +146,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         num_of_filters (int): The number of filters in the convolutional layer.
+
         """
 
         return (np.log10(2) - np.log10(self.u)) / (self.R * num_of_filters)
@@ -169,6 +167,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         ranks (numpy.ndarray): The ranks of the level one norms of the filters in each convolutional layer.
+
         """
 
         alpha = self.alpha(len(ranks))
@@ -189,6 +188,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         delta_ranks (numpy.ndarray): The outputs of the function self.delta_ranks.
+        
         """
 
         if self.batch_iteration == 0:
@@ -207,6 +207,7 @@ class SPP(tf.keras.callbacks.Callback):
         Parameters:
         num_desired_zeros (int): The number of weights to remove from the layer.
         mask (numpy.ndarray): A weight mask. Where mask[x, y] = 0, the weight should be removed from the layer.
+
         """
 
         flattened_mask = mask.flatten()
@@ -224,8 +225,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def prune_weights(self):
 
-        """ Multiplies the mask by the weights in each filter of a convolutional layer to remove unrequired weights.
-        """
+        """ Multiplies the mask by the weights in each filter of a convolutional layer to remove unrequired weights. """
 
         layer_index = 0
         conv_layer_index = 0

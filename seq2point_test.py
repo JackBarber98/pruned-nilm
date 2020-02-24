@@ -26,6 +26,10 @@ class Tester():
         logging.basicConfig(filename=log_file,level=logging.INFO)
 
     def test_model(self):
+
+        """ Tests a fully-trained model using a sliding window generator as an input. Measures inference time, gathers, and 
+        plots evaluationg metrics. """
+
         test_input, test_target = self.load_dataset(self.__test_directory)
 
         model = create_model()
@@ -68,6 +72,15 @@ class Tester():
         return test_input, test_target
 
     def log_results(self, model, test_time, evaluation_metrics):
+
+        """Logs the inference time, MAE, MSE, and compression ratio of the evaluated model.
+
+        Parameters:
+        model (tf.keras.Model): The evaluated model.
+        test_time (float): The time taken by the model to infer all required values.
+
+        """
+
         inference_log = "Inference Time: " + str(test_time)
         logging.info(inference_log)
 
@@ -77,6 +90,16 @@ class Tester():
         self.count_pruned_weights(model)  
 
     def count_pruned_weights(self, model):
+
+        """ Counts the total number of weights, pruned weights, and weights in convolutional 
+        layers.
+
+        Parameters:
+        model (tf.keras.Model): The evaluated model.
+        test_time (float): The time taken by the model to infer all required values.
+
+        """
+
         num_zeros = 0
         num_weights = 0
         num_conv_weights = 0
@@ -89,13 +112,25 @@ class Tester():
                 if "conv" in layer.name:
                     num_conv_weights += np.size(layer_weights)
 
-        num_of_zeros = "Number of Zeros: " + str(num_zeros)
-        logging.info(num_of_zeros)
-
-        num_of_weights = "Num of Weights: " + str(num_weights)
-        logging.info(num_of_weights)
+        zeros_string = "ZEROS: " + str(num_zeros)
+        weights_string = "WEIGHTS: " + str(num_weights)
+        conv_weights = "CONV WEIGHTS: " + str(num_conv_weights)
+        logging.info(zeros_string)
+        logging.info(weights_string)
+        logging.info(conv_weights)
 
     def plot_results(self, testing_history, test_input, test_target):
+
+        """ Generates and saves a plot of the testing history of the model against the (actual) 
+        aggregate energy values and the true appliance values.
+
+        Parameters:
+        testing_history (numpy.ndarray): The series of values inferred by the model.
+        test_input (numpy.ndarray): The aggregate energy data.
+        test_target (numpy.ndarray): The true energy values of the appliance.
+
+        """
+
         testing_history = ((testing_history * appliance_data[self.__appliance]["std"]) + appliance_data[self.__appliance]["mean"])
         test_target = ((test_target * appliance_data[self.__appliance]["std"]) + appliance_data[self.__appliance]["mean"])
         test_agg = (test_input.flatten() * 814) + 522
