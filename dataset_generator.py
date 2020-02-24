@@ -12,10 +12,35 @@ class DatasetGenerator():
         self.__agg_std = 814
 
     def digits_in_file_name(self, file_name):
-        return int(re.search(r"\d+", file_name).group())
+
+        """ Returns grouped digits in a file name. (e.g. if the file name is "CLEAN_HOUSE_12", the 
+        value 12 will be returned). 
+        
+        Parameters:
+        file_name (string): The name of the file being processed.
+
+        Returns: 
+        digits (int): The grouped digits found in the file name.
+        
+        """
+
+        digits = int(re.search(r"\d+", file_name).group())
+        return digits
 
     # Loads data about a specified appliance and returns the data as a DataFrame.
     def load_file(self, house, channel):
+
+        """ Loads and returns the file required to generate a specific dataset file as a pandas DataFrame. 
+        
+        Parameters:
+        house (int): The house number of the data to load.
+        channel (int): The column from which data should be extracted.
+
+        Returns: 
+        file_contents (pandas.DataFrame): The data from the portion of the file required.
+        
+        """
+
         file_name = self.__directory + "CLEAN_House" + str(house) + ".csv"
         file_contents = pd.read_csv(file_name,
                                     names=["aggregate", self.__appliance],
@@ -27,6 +52,9 @@ class DatasetGenerator():
         return file_contents
 
     def generate_test_house(self):
+
+        """ Normalises the aggregate and appliance data for a specified house to be part of the testing set. Writes this data to the testing file. """
+
         print("Formatting " + self.__appliance + " test data...")
         
         # Load the test data.
@@ -45,6 +73,9 @@ class DatasetGenerator():
         del test_data
 
     def generate_validation_house(self):
+
+        """ Normalises the aggregate and appliance data for a specified house to be part of the validation set. Writes this data to the validation file. """
+
         print("Formatting " + self.__appliance + " validation data...")
         
         # Load the validation data.
@@ -62,7 +93,15 @@ class DatasetGenerator():
         # Delete validation data from memory.
         del validation_data
 
-    def generate_train_house(self):
+    def generate_train_house(self, file_name):
+
+        """ Normalises the aggregate and appliance data for a specified house to be part of the training set. Writes this data to the training file. 
+        
+        Parameters:
+        file_name (string): The name of the file to be processed.
+        
+        """
+
         try:
             training_data = self.load_file(self.digits_in_file_name(file_name),
                                             appliance_data[self.__appliance]["channels"][appliance_data[self.__appliance]["houses"]
@@ -80,10 +119,13 @@ class DatasetGenerator():
             # Delete training data from memory.
             del training_data
         except:
-            print("PASS")
+            print("House", self.digits_in_file_name(file_name), " not found. ")
             pass
 
     def generate(self):
+
+        """ Generates normalised training, validation, and testing datasets from the cleaned REFIT dataset. """
+
         initial_time = time.time()
 
         print("Selected Appliance: ", self.__appliance)
@@ -107,7 +149,7 @@ class DatasetGenerator():
 
             # Format training data.
             elif self.digits_in_file_name(file_name) in appliance_data[self.__appliance]["houses"]:
-                self.generate_train_house()
+                self.generate_train_house(file_name)
 
         print("The training dataset contains " + str(length) + " rows of data.")
         print("Datasets took " + str(time.time() - initial_time) + "s to generate")
