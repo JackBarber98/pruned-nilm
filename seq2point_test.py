@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class Tester():
     def __init__(self, appliance, pruning_algorithm, transfer_domain, crop, batch_size):
-        self.__appliance = self.__appliance
+        self.__appliance = appliance
         self.__pruning_algorithm = pruning_algorithm
         self.__transfer_domain = transfer_domain
         self.__crop = crop

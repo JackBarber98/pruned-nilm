@@ -7,9 +7,11 @@ from appliance_data import appliance_data
 class DatasetGenerator():
     def __init__(self, appliance):
         self.__appliance = appliance
-        self.__directory = "./refit_dataset"
+        self.__directory = "./refit_dataset/"
         self.__agg_mean = 522
         self.__agg_std = 814
+
+        self.__training_set_length = 0
 
     def digits_in_file_name(self, file_name):
 
@@ -102,25 +104,25 @@ class DatasetGenerator():
         
         """
 
-        try:
-            training_data = self.load_file(self.digits_in_file_name(file_name),
-                                            appliance_data[self.__appliance]["channels"][appliance_data[self.__appliance]["houses"]
-                                            .index(self.digits_in_file_name(file_name))])
+        #try:
+        training_data = self.load_file(self.digits_in_file_name(file_name),
+                                        appliance_data[self.__appliance]["channels"][appliance_data[self.__appliance]["houses"]
+                                        .index(self.digits_in_file_name(file_name))])
 
-            # Normalise the training data.
-            training_data["aggregate"] = (training_data["aggregate"] - self.__agg_mean) / self.__agg_std
-            training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
-            rows, _ = training_data.shape
-            
-            length += rows
+        # Normalise the training data.
+        training_data["aggregate"] = (training_data["aggregate"] - self.__agg_mean) / self.__agg_std
+        training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
+        rows, _ = training_data.shape
 
-            training_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_training_.csv", mode="a", index=False, header=False)
-            
-            # Delete training data from memory.
-            del training_data
-        except:
-            print("House", self.digits_in_file_name(file_name), " not found. ")
-            pass
+        self.__training_set_length += rows
+
+        training_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_training_.csv", mode="a", index=False, header=False)
+        
+        # Delete training data from memory.
+        del training_data
+        #except:
+            #print("House", self.digits_in_file_name(file_name), " not found. ")
+            #pass
 
     def generate(self):
 
@@ -131,7 +133,6 @@ class DatasetGenerator():
         print("Selected Appliance: ", self.__appliance)
         print("Directory of Dataset: ", self.__directory)
 
-        length = 0
 
         if not os.path.exists(self.__appliance):
             os.makedirs(self.__appliance)
@@ -151,5 +152,8 @@ class DatasetGenerator():
             elif self.digits_in_file_name(file_name) in appliance_data[self.__appliance]["houses"]:
                 self.generate_train_house(file_name)
 
-        print("The training dataset contains " + str(length) + " rows of data.")
+        print("The training dataset contains " + str(self.__training_set_lengthlength) + " rows of data.")
         print("Datasets took " + str(time.time() - initial_time) + "s to generate")
+
+dsg = DatasetGenerator("kettle")
+dsg.generate()

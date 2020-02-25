@@ -26,8 +26,8 @@ class Trainer():
         # Directories of the training and validation files. Always has the structure 
         # ./{appliance_name}/{appliance_name}_train_.csv for training or 
         # ./{appliance_name}/{appliance_name}_validation_.csv
-        self.__training_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
-        self.__validation_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
+        self.__training_directory = "./" + self.__appliance + "/" + self.__appliance + "_training_.csv"
+        self.__validation_directory = "./" + self.__appliance + "/" + self.__appliance + "_validation_.csv"
 
         self.__training_chunker = InputChunkSlider(file_name=self.__training_directory, 
                                         chunk_size=self.__max_chunk_size, 
@@ -61,7 +61,7 @@ class Trainer():
         model = create_smaller_model()
 
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-        early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=3, verbose=1, mode="auto")
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=5, verbose=1, mode="auto")
 
         if self.__pruning_algorithm == "tfmot":
             training_history = self.tfmot_pruning(model, early_stopping, steps_per_training_epoch)
@@ -97,10 +97,10 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=1,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
+            validation_steps=10,
             validation_freq=5,
             callbacks=[early_stopping])
         return training_history
@@ -132,11 +132,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=1,
+            epochs=10,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
-            validation_freq=1,
+            validation_steps=10,
+            validation_freq=5,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
 
         model = sparsity.keras.strip_pruning(model)
@@ -164,10 +164,10 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=10,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
+            validation_steps=10,
             validation_freq=5,
             callbacks=[early_stopping, spp])
         return training_history
@@ -193,10 +193,10 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=10,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
+            validation_steps=10,
             validation_freq=5,
             callbacks=[early_stopping, entropic])
         return training_history
@@ -222,10 +222,10 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=35,
+            epochs=10,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
+            validation_steps=10,
             validation_freq=5,
             callbacks=[early_stopping, threshold])
         return training_history
