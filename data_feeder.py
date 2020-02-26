@@ -88,12 +88,12 @@ class InputChunkSlider():
                     yield input_data, output_data
         # Skip rows where needed to allow data to be loaded properly when there is not enough memory.
         if (self.total_size >= self.__ram_threshold):
-            indicies_to_skip = np.arange(self.total_size / self.__chunk_size)
+            number_of_chunks = np.arange(self.total_size / self.__chunk_size)
             if self.__shuffle:
-                np.random.shuffle(indicies_to_skip)
+                np.random.shuffle(number_of_chunks)
 
             # Yield the data in sections.
-            for index in indicies_to_skip:
+            for index in number_of_chunks:
                 data_array = np.array(pd.read_csv(self.__file_name, skiprows=int(index) * self.__chunk_size, header=0, nrows=self.__crop))                   
                 inputs = data_array[:, 0]
                 outputs = data_array[:, 1]
