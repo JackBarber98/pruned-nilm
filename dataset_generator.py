@@ -104,25 +104,25 @@ class DatasetGenerator():
         
         """
 
-        #try:
-        training_data = self.load_file(self.digits_in_file_name(file_name),
-                                        appliance_data[self.__appliance]["channels"][appliance_data[self.__appliance]["houses"]
-                                        .index(self.digits_in_file_name(file_name))])
+        try:
+            training_data = self.load_file(self.digits_in_file_name(file_name),
+                                            appliance_data[self.__appliance]["channels"][appliance_data[self.__appliance]["houses"]
+                                            .index(self.digits_in_file_name(file_name))])
 
-        # Normalise the training data.
-        training_data["aggregate"] = (training_data["aggregate"] - self.__agg_mean) / self.__agg_std
-        training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
-        rows, _ = training_data.shape
+            # Normalise the training data.
+            training_data["aggregate"] = (training_data["aggregate"] - self.__agg_mean) / self.__agg_std
+            training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
+            rows, _ = training_data.shape
 
-        self.__training_set_length += rows
+            self.__training_set_length += rows
 
-        training_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_training_.csv", mode="a", index=False, header=False)
-        
-        # Delete training data from memory.
-        del training_data
-        #except:
-            #print("House", self.digits_in_file_name(file_name), " not found. ")
-            #pass
+            training_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_training_.csv", mode="a", index=False, header=False)
+            
+            # Delete training data from memory.
+            del training_data
+        except:
+            print("House", self.digits_in_file_name(file_name), " not found. ")
+            pass
 
     def generate(self):
 
@@ -152,8 +152,8 @@ class DatasetGenerator():
             elif self.digits_in_file_name(file_name) in appliance_data[self.__appliance]["houses"]:
                 self.generate_train_house(file_name)
 
-        print("The training dataset contains " + str(self.__training_set_lengthlength) + " rows of data.")
+        print("The training dataset contains " + str(self.__training_set_length) + " rows of data.")
         print("Datasets took " + str(time.time() - initial_time) + "s to generate")
 
-dsg = DatasetGenerator("kettle")
+dsg = DatasetGenerator("dishwasher")
 dsg.generate()

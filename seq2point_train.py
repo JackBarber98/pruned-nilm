@@ -42,6 +42,8 @@ class Trainer():
                                             offset=self.__window_offset, 
                                             ram_threshold=5*10**5)
 
+        self.__validation_frequency = 3
+
     def train_model(self):
 
         """Trains an energy disaggregation model using a user-selected pruning algorithm (default is no pruning). 
@@ -61,7 +63,7 @@ class Trainer():
         model = create_smaller_model()
 
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999), loss="mse", metrics=["mse", "msle", "mae"]) 
-        early_stopping = tf.keras.callbacks.EarlyStopping(monitor="loss", min_delta=0, patience=5, verbose=1, mode="auto")
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0, patience=5, verbose=1, mode="auto")
 
         if self.__pruning_algorithm == "tfmot":
             training_history = self.tfmot_pruning(model, early_stopping, steps_per_training_epoch)
@@ -73,6 +75,8 @@ class Trainer():
             training_history = self.threshold_pruning(model, early_stopping, steps_per_training_epoch)
         if self.__pruning_algorithm == "default":
             training_history = self.default_train(model, early_stopping, steps_per_training_epoch)
+
+        training_history.history["val_loss"] = np.repeat(training_history.history["val_loss"], self.__validation_frequency)
 
         model.summary()
         save_model(model, self.__pruning_algorithm, "./" + self.__appliance + "/saved_model/" + self.__appliance + "_model_")
@@ -100,9 +104,10 @@ class Trainer():
             epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=5,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping])
+
         return training_history
 
     def tfmot_pruning(self, model, early_stopping, steps_per_training_epoch):
@@ -132,11 +137,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=5,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping, sparsity.keras.UpdatePruningStep()])
 
         model = sparsity.keras.strip_pruning(model)
@@ -164,11 +169,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=5,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping, spp])
         return training_history
 
@@ -193,11 +198,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=5,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping, entropic])
         return training_history
 
@@ -222,11 +227,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=10,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=5,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping, threshold])
         return training_history
 
@@ -240,7 +245,8 @@ class Trainer():
         """
 
         plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
-        plt.title('Training Metrics')
+        plt.plot(training_history.history["val_loss"], label="MSE (Validation Loss)")
+        plt.title('Training History')
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend()

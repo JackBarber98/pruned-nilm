@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 class Entropic(tf.keras.callbacks.Callback):
 
-    """Performs Hur et al.'s entropy-based pruning algorithm. Uses weight information and entropy to 
+    """ Performs Hur et al.'s entropy-based pruning algorithm. Uses weight information and entropy to 
     determine which weights to prune.
 
     Parameters:
     pruning_frequency (int): The intervals between pruning is performed (in epochs).
+    previous_loss (float): The loss experienced during the last training epoch.
     means (list): The mean of the weights of each layer.
     stds (list): The standards deviation of the weights of each layer.
     layer_probabilities (list): A 2D list of the probability of a weight existing.
@@ -21,6 +22,7 @@ class Entropic(tf.keras.callbacks.Callback):
         super(Entropic, self).__init__()
 
         self.__pruning_frequency = 5
+        self.__previous_loss = 0
 
         self.__means = []
         self.__stds = []
@@ -31,7 +33,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
 
-        """Determines when pruning should occur and triggers each step of the pruning process.
+        """ Determines when pruning should occur and triggers each step of the pruning process.
 
         Parameters:
         epoch (int): The current training epoch.
@@ -44,7 +46,8 @@ class Entropic(tf.keras.callbacks.Callback):
         self.__layer_information = []
         self.__layer_entropies = []
 
-        if epoch % self.__pruning_frequency == 0:
+
+        if epoch % self.__pruning_frequency == 0 and self.model_is_stable(logs["loss"], epoch):
             index = 0 
             for layer in self.model.layers:
                 weights = layer.get_weights()
@@ -55,9 +58,30 @@ class Entropic(tf.keras.callbacks.Callback):
 
                 index += 1
 
+        self.__previous_loss = logs["loss"]
+
+    def model_is_stable(self, current_loss, epoch):
+
+        """ Determines whether the change in loss is greater than or less than 5 * 10^-3. This has been found to 
+        be the point at which a seq2point network becomes stable.
+
+        Parameters:
+        current_loss (float): The loss resulting from the current training epoch.
+        epoch (int): The current training epoch count.
+
+        """
+
+        if epoch == 0:
+            delta = current_loss
+        else:
+            delta = current_loss - self.__previous_loss
+
+        if np.absolute(delta) <= 0.05:
+            return True
+
     def get_probability_distribution(self, weights, index):
 
-        """Generates a probability density for each weight in a layer.
+        """ Generates a probability density for each weight in a layer.
 
         Parameters:
         weights (numpy.array): The layer's weights.
@@ -75,7 +99,7 @@ class Entropic(tf.keras.callbacks.Callback):
         return probability_densities
 
     def generate_pruning_stats(self, weights):
-        """Calculates the mean and standard deviation of weights in a layer
+        """ Calculates the mean and standard deviation of weights in a layer
 
         Parameters:
         weights (numpy.ndarray): An array of all non-bias weights in a layer.
@@ -92,7 +116,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
     def calculate_probability_and_information_values(self, weights, index):
 
-        """Calculates the probability of a weight existing over a short interval and the 
+        """ Calculates the probability of a weight existing over a short interval and the 
         information that weight holds.
 
         Parameters:
@@ -120,7 +144,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
     def calculate_weight_entropy(self, weights, index):
 
-        """Calculates the entropy of each layer of the network.
+        """ Calculates the entropy of each layer of the network.
 
         Parameters:
         weights (numpy.ndarray): An array of all non-bias weights in a layer.
@@ -136,7 +160,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
     def prune_weights(self, layer, weights, index):
 
-        """Sets the weights deemed to be redundant to zero.
+        """ Sets the weights deemed to be redundant to zero.
 
         Parameters:
         weights (numpy.ndarray): An array of all non-bias weights in a layer.
