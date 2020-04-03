@@ -172,8 +172,8 @@ class Trainer():
             epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
-            validation_freq=self.__validation_frequency,
+            validation_steps=1,
+            validation_freq=1,
             callbacks=[early_stopping, spp])
         return training_history
 
@@ -201,7 +201,7 @@ class Trainer():
             epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=100,
+            validation_steps=1,
             validation_freq=self.__validation_frequency,
             callbacks=[early_stopping, entropic])
         return training_history

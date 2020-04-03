@@ -25,7 +25,8 @@ class SPP(tf.keras.callbacks.Callback):
     def __init__(self):
         super(SPP, self).__init__()
 
-        self.PRUNING_FREQUENCY = 101
+        self.__pruning_frequency = 108
+        self.__pruning_stopped = False
 
         self.__R = 0.5
         self.__A = 0.05
@@ -46,21 +47,17 @@ class SPP(tf.keras.callbacks.Callback):
 
         """
 
-        if self.__batch_count == 0:
-            self.spp_pruning()
-        try:
-            if not self.ratio_is_greater_than_r() and not self.all_probabilities_are_integers():
-                self.spp_pruning()
-            try:
-                if not self.ratio_is_greater_than_r() and not self.all_probabilities_integers() and self.pruning_iteration % self.PRUNING_FREQUENCY == 0:
+        if self.__pruning_stopped == False:
+            if self.__batch_count % self.__pruning_frequency == 0 and self.__batch_count > 0:
+                if not self.ratio_is_greater_than_r() and not self.all_probabilities_are_integers():
                     self.spp_pruning()
                 else:
-                    pass
-            except:
-                pass
-            self.__batch_count += 1
-        except:
+                    self.__pruning_stopped == True
+            elif self.__batch_count == 0:
+                self.spp_pruning()
+        else:
             return
+        self.__batch_count += 1
 
     def on_epoch_end(self, epoch, logs={}):
         print()

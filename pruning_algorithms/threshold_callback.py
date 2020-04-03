@@ -2,8 +2,6 @@ import numpy as np
 from keras.callbacks import Callback
 from model_structure import create_model
 
-# RELATIVE THRESHOLD PRUNING
-
 class Threshold(Callback):
     def __init__(self):
         super(Threshold, self).__init__()
