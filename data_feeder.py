@@ -20,25 +20,36 @@ class InputChunkSlider():
 
     """
 
-    def __init__(self, file_name, chunk_size, shuffle, offset, batch_size=1000, crop=100000, ram_threshold=5 * 10 ** 5):
+    def __init__(self, 
+                file_name, 
+                chunk_size, 
+                shuffle, 
+                offset, 
+                batch_size=1000, 
+                crop=100000, 
+                skip_rows=0, 
+                ram_threshold=5 * 10 ** 5):
         self.__file_name = file_name
         self.__batch_size = batch_size
         self.__chunk_size = 10 ** 8
         self.__shuffle = shuffle
         self.__offset = offset
         self.__crop = crop
+        self.__skip_rows = skip_rows
         self.__ram_threshold = ram_threshold
         self.total_size = 0
 
     def check_if_chunking(self):
 
-        """Count the number of rows in the dataset and determine whether this is larger than the chunking threshold or not.
-
-        """
+        """Count the number of rows in the dataset and determine whether this is larger than the chunking 
+        threshold or not. """
 
         # Loads the file and counts the number of rows it contains.
         print("Importing training file...")
-        chunks = pd.read_csv(self.__file_name, header=0, nrows=self.__crop)
+        chunks = pd.read_csv(self.__file_name, 
+                            header=0, 
+                            nrows=self.__crop, 
+                            skiprows=self.__skip_rows)
         print("Counting number of rows...")
         self.total_size = len(chunks)
         del chunks
@@ -57,7 +68,8 @@ class InputChunkSlider():
 
         Yields:
         input_data (numpy.array): A 1D array of size batch_size containing features of a single input. 
-        output_data (numpy.array): A 1D array of size batch_size containing the target values corresponding to each feature set.
+        output_data (numpy.array): A 1D array of size batch_size containing the target values corresponding to 
+        each feature set.
 
         """
 
@@ -66,8 +78,9 @@ class InputChunkSlider():
 
         # If the data can be loaded in one go, don't skip any rows.
         if (self.total_size <= self.__ram_threshold):
+
             # Returns an array of the content from the CSV file.
-            data_array = np.array(pd.read_csv(self.__file_name, nrows=self.__crop, header=0))
+            data_array = np.array(pd.read_csv(self.__file_name, nrows=self.__crop, skiprows=self.__skip_rows, header=0))
             inputs = data_array[:, 0]
             outputs = data_array[:, 1]
 
@@ -86,6 +99,7 @@ class InputChunkSlider():
                     output_data = outputs[splice + self.__offset].reshape(-1, 1)
 
                     yield input_data, output_data
+                    
         # Skip rows where needed to allow data to be loaded properly when there is not enough memory.
         if (self.total_size >= self.__ram_threshold):
             number_of_chunks = np.arange(self.total_size / self.__chunk_size)
@@ -105,6 +119,7 @@ class InputChunkSlider():
                 indicies = np.arange(maximum_batch_size)
                 if self.__shuffle:
                     np.random.shuffle(indicies)
+
             while True:
                 for start_index in range(0, maximum_batch_size, self.__batch_size):
                     splice = indicies[start_index : start_index + self.__batch_size]
@@ -152,5 +167,3 @@ class TestingChunkSlider(object):
             input_data = np.array([self.__inputs[index : index + 2 * self.__offset + 1] for index in splice])
             target_data = self.__targets[splice + self.__offset].reshape(-1, 1)
             yield input_data, target_data
-
-

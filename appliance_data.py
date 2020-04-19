@@ -1,3 +1,6 @@
+""" A collection of all appliances available. Each appliance has a consumption mean 
+and standard deviation, as well as a list of houses containing the appliance. """
+
 appliance_data = {
     "kettle": {
         "mean": 700,

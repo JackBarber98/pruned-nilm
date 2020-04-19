@@ -25,7 +25,7 @@ class SPP(tf.keras.callbacks.Callback):
     def __init__(self):
         super(SPP, self).__init__()
 
-        self.__pruning_frequency = 108
+        self.__pruning_frequency = 2001
         self.__pruning_stopped = False
 
         self.__R = 0.5

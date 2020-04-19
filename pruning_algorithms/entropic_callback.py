@@ -21,7 +21,7 @@ class Entropic(tf.keras.callbacks.Callback):
     def __init__(self):
         super(Entropic, self).__init__()
 
-        self.__pruning_frequency = 5
+        self.__pruning_frequency = 2001
         self.__previous_loss = 0
 
         self.__means = []
@@ -31,7 +31,9 @@ class Entropic(tf.keras.callbacks.Callback):
         self.__layer_entropies = []
         self.__layer_information = []
 
-    def on_epoch_end(self, epoch, logs={}):
+        self.__batch_count = 0
+
+    def on_batch_end(self, epoch, logs={}):
 
         """ Determines when pruning should occur and triggers each step of the pruning process.
 
@@ -46,9 +48,9 @@ class Entropic(tf.keras.callbacks.Callback):
         self.__layer_information = []
         self.__layer_entropies = []
 
+        if self.model_is_stable(logs["loss"], epoch) and self.__batch_count % self.__pruning_frequency == 0:
+            index = 0
 
-        if epoch % self.__pruning_frequency == 0 and self.model_is_stable(logs["loss"], epoch):
-            index = 0 
             for layer in self.model.layers:
                 weights = layer.get_weights()
                 self.generate_pruning_stats(weights)
@@ -57,6 +59,7 @@ class Entropic(tf.keras.callbacks.Callback):
                 self.prune_weights(layer, weights, index)
 
                 index += 1
+                self.__batch_count += 1
 
         self.__previous_loss = logs["loss"]
 
@@ -76,7 +79,7 @@ class Entropic(tf.keras.callbacks.Callback):
         else:
             delta = current_loss - self.__previous_loss
 
-        if np.absolute(delta) <= 0.05:
+        if np.absolute(delta) <= 0.07:
             return True
 
     def get_probability_distribution(self, weights, index):
@@ -93,7 +96,7 @@ class Entropic(tf.keras.callbacks.Callback):
         """
 
         distribution_values = np.random.normal(self.__means[index], self.__stds[index], np.size(weights))
-        _, bins, _ = plt.hist(distribution_values, int(np.size(weights) - 1), density=True)
+        _, bins = np.histogram(distribution_values, bins=int(np.size(weights) - 1), density=True)
 
         probability_densities = 1 / (self.__stds[index] * np.sqrt(2 * np.pi)) * np.exp( - (bins - self.__means[index]) ** 2 / (2 * self.__stds[index] ** 2))
         return probability_densities
