@@ -6,7 +6,7 @@ import pandas as pd
 import tensorflow as tf 
 import time
 from model_structure import create_model, load_model
-from data_feeder import TestingChunkSlider
+from data_feeder import TestSlidingWindowGenerator
 from appliance_data import appliance_data
 import matplotlib.pyplot as plt
 
@@ -26,7 +26,7 @@ class Tester():
 
         self.__test_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
 
-        log_file = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log"
+        log_file = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log"
         logging.basicConfig(filename=log_file,level=logging.INFO)
 
     def test_model(self):
@@ -38,21 +38,19 @@ class Tester():
         model = create_model()
         model = load_model(model, self.__network_type, self.__pruning_algorithm, self.__appliance)
 
-        test_generator = TestingChunkSlider(number_of_windows=100, inputs=test_input, targets=test_target, offset=self.__window_offset)
+        test_generator = TestSlidingWindowGenerator(number_of_windows=100, inputs=test_input, targets=test_target, offset=self.__window_offset)
 
         # Calculate the optimum steps per epoch.
         steps_per_test_epoch = np.round(int(test_generator.total_size / self.__batch_size), decimals=0)
 
         # Test the model.
         start_time = time.time()
-        testing_history = model.predict(x=test_generator.load_data(), steps=steps_per_test_epoch, verbose=2)
+        testing_history = model.predict(x=test_generator.load_dataset(), steps=steps_per_test_epoch, verbose=2)
 
-        print("MAX: ", np.max(testing_history))
-        print("MIN: ", np.min(testing_history))
         end_time = time.time()
         test_time = end_time - start_time
 
-        evaluation_metrics = model.evaluate(x=test_generator.load_data(), steps=steps_per_test_epoch)
+        evaluation_metrics = model.evaluate(x=test_generator.load_dataset(), steps=steps_per_test_epoch)
 
         self.log_results(model, test_time, evaluation_metrics)
         self.plot_results(testing_history, test_input, test_target)
@@ -140,7 +138,7 @@ class Tester():
         total_weights_string = "TOTAL WEIGHTS: " + str(num_total_weights)
         total_sparsity_ratio = "TOTAL RATIO: " + str(num_total_zeros / num_total_weights)
 
-        print("LOGGING PATH: ", "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log")
+        print("LOGGING PATH: ", "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log")
 
         logging.info(conv_zeros_string)
         logging.info(conv_weights_string)
@@ -186,7 +184,7 @@ class Tester():
         plt.xlabel('Testing Window')
         plt.legend()
 
-        file_path = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_figure.png"
+        file_path = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_figure.png"
         plt.savefig(fname=file_path)
 
         plt.show()

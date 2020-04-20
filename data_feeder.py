@@ -5,7 +5,7 @@ import pandas as pd
 # crop: the number of rows in the data set to be used in total.
 # chunk_size: the number of lines to read from the file at once.
 
-class InputChunkSlider():
+class TrainSlidingWindowGenerator():
 
     """Yields features and targets for training a ConvNet.
 
@@ -128,7 +128,7 @@ class InputChunkSlider():
 
                     yield input_data, output_data
 
-class TestChunkSlider(object):
+class TestSlidingWindowGenerator(object):
 
     """Yields features and targets for testing and validating a ConvNet.
 

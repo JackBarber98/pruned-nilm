@@ -81,8 +81,7 @@ class DatasetGenerator():
     
         # Normalise the appliance's test data.
         test_data["aggregate"] = (test_data["aggregate"] - self.__agg_mean) / self.__agg_std
-        test_data[self.__appliance] = (test_data[self.__appliance] - appliance_data[self.__appliance]["mean"])
-                                    / appliance_data[self.__appliance]["std"]
+        test_data[self.__appliance] = (test_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
 
         # Save the test data.
         test_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_test_.csv", index=False)
@@ -104,8 +103,7 @@ class DatasetGenerator():
         
         # Normalise the validation data.
         validation_data["aggregate"] = (validation_data["aggregate"] - self.__agg_mean) / self.__agg_std
-        validation_data[self.__appliance] = (validation_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) 
-                                            / appliance_data[self.__appliance]["std"]
+        validation_data[self.__appliance] = (validation_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
 
         # Save validation data.
         validation_data.to_csv("./" + self.__appliance + "/" + self.__appliance + "_validation_.csv", index=False)
@@ -130,8 +128,7 @@ class DatasetGenerator():
 
             # Normalise the training data.
             training_data["aggregate"] = (training_data["aggregate"] - self.__agg_mean) / self.__agg_std
-            training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) 
-                                            / appliance_data[self.__appliance]["std"]
+            training_data[self.__appliance] = (training_data[self.__appliance] - appliance_data[self.__appliance]["mean"]) / appliance_data[self.__appliance]["std"]
             rows, _ = training_data.shape
 
             self.__training_set_length += rows

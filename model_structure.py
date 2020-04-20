@@ -120,7 +120,7 @@ def save_model(model, network_type, algorithm, appliance):
 
     """
     
-    model_path = "./" + appliance + "/saved_model/" + appliance + "_" + algorithm + "_" + network_type + "_model.h5"
+    model_path = "./" + appliance + "/saved_models/" + appliance + "_" + algorithm + "_" + network_type + "_model.h5"
 
     if not os.path.exists (model_path):
         open((model_path), 'a').close()
@@ -139,7 +139,7 @@ def load_model(model, network_type, algorithm, appliance):
 
     """
 
-    model_name = "./" + appliance + "/saved_model/" + appliance + "_" + algorithm + "_" + network_type + "_model.h5"
+    model_name = "./" + appliance + "/saved_models/" + appliance + "_" + algorithm + "_" + network_type + "_model.h5"
     print("PATH NAME: ", model_name)
 
     model = tf.keras.models.load_model(model_name)

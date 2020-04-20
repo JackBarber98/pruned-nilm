@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import tensorflow_model_optimization as tfmot
 from tensorflow_model_optimization import sparsity
 
-from data_feeder import InputChunkSlider
-from model_structure import create_model, create_smaller_model,create_dropout_model, create_optimal_model, save_model
+from data_feeder import TrainSlidingWindowGenerator
+from model_structure import create_model, create_reduced_model, create_dropout_model, create_reduced_dropout_model, save_model
 from pruning_algorithms.spp_callback import SPP
 from pruning_algorithms.entropic_callback import Entropic
 from pruning_algorithms.threshold_callback import Threshold
@@ -33,14 +33,14 @@ class Trainer():
         self.__training_directory = "./" + self.__appliance + "/" + self.__appliance + "_training_.csv"
         self.__validation_directory = "./" + self.__appliance + "/" + self.__appliance + "_validation_.csv"
 
-        self.__training_chunker = InputChunkSlider(file_name=self.__training_directory, 
+        self.__training_chunker = TrainSlidingWindowGenerator(file_name=self.__training_directory, 
                                         chunk_size=self.__max_chunk_size, 
                                         batch_size=self.__batch_size, 
                                         crop=self.__crop, shuffle=True,
                                         skip_rows=10000000, 
                                         offset=self.__window_offset, 
                                         ram_threshold=5*10**5)
-        self.__validation_chunker = InputChunkSlider(file_name=self.__validation_directory, 
+        self.__validation_chunker = TrainSlidingWindowGenerator(file_name=self.__validation_directory, 
                                             chunk_size=self.__max_chunk_size, 
                                             batch_size=self.__batch_size, 
                                             crop=self.__crop, 
@@ -60,12 +60,12 @@ class Trainer():
         self.__training_chunker.check_if_chunking()
         steps_per_training_epoch = np.round(int(self.__training_chunker.total_size / self.__batch_size), decimals=0)
 
-        if self.__network_type == "smaller":
-            model = create_smaller_model()
+        if self.__network_type == "reduced":
+            model = create_reduced_model()
         elif self.__network_type == "dropout":
             model = create_dropout_model()
-        elif self.__network_type == "optimal":
-            model = create_optimal_model()
+        elif self.__network_type == "reduced_dropout":
+            model = create_reduced_dropout_model()
         else:
             model = create_model()
 
@@ -108,11 +108,11 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=50,
+            epochs=2,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=10,
-            validation_freq=self.__validation_frequency,
+            validation_steps=1,
+            validation_freq=1,
             callbacks=[early_stopping])
 
         return training_history
@@ -258,5 +258,5 @@ class Trainer():
         plt.xlabel('Epoch')
         plt.legend()
 
-        file_name = "./" + self.__appliance + "/saved_model/" + self.__appliance + "_" + self.__pruning_algorithm + "_training_results.png"
+        file_name = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_training_results.png"
         plt.savefig(fname=file_name)
