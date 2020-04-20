@@ -128,7 +128,7 @@ class InputChunkSlider():
 
                     yield input_data, output_data
 
-class TestingChunkSlider(object):
+class TestChunkSlider(object):
 
     """Yields features and targets for testing and validating a ConvNet.
 
@@ -146,7 +146,7 @@ class TestingChunkSlider(object):
         self.__targets = targets
         self.total_size = len(inputs)
 
-    def load_data(self):
+    def load_dataset(self):
 
         """Yields features and targets for testing and validating a ConvNet.
 

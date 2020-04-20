@@ -180,7 +180,6 @@ class Entropic(tf.keras.callbacks.Callback):
                 if self.__layer_information[index][weight_index] < - self.__layer_entropies[index] * 1.1:
                     flattened_weights[weight_index] = 0
                 weight_index += 1
-
             weights[0] = np.reshape(flattened_weights, original_shape)
             layer.set_weights(weights) 
 

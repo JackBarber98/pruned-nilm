@@ -1,17 +1,20 @@
 # Pruning Algorithms for Seq2Point Energy Disaggregation
 
-This code base implements three contemporary pruning algorithms designed to reduce the size of a typical sequence-to-point deep learning model [1] for use in energy disaggreation / non-intrusive load monitoring.
-
-Support is also provided for transfer learning.
+This code repository implements four weight pruning algorithms designed to reduce the size of Zhang et al.'s sequence-to-point deep learning model for use in energy disaggreation / non-intrusive load monitoring. Three alternative network architectures are
+also available. These include a dropout variant of Zhang et al.'s architecture, a variant with fewer weights and filters, and an
+architecture implementing both of these. Support is also provided for transfer learning.
 
 ## Prerequisites
+
+### Core Libraries
 
 Numpy, Pandas, and Matplotlib are required for this project:
 ```bash
 pip install numpy && pip install pandas && pip install matplotlib
 ```
+### TensorFlow Libraries
 
-TensorFlow 2.0 GPU is also required for GPU-accelerated training and inferencing:
+TensorFlow 2.0 GPU is required for GPU-accelerated training and inferencing:
 ```bash
 pip install tensorflow-gpu
 ```
@@ -21,6 +24,10 @@ Lightweight models are produced using the Tensorflow Model Optimisation Toolkit:
 pip install tensorflow-model-optimization-toolkit
 ```
 
+### Datasets
+
+The REFIT: Electrical Load Measurements Dataset (Cleaned) is required to create training, validation, and testing datasets. This can be downloaded from https://pureportal.strath.ac.uk/en/datasets/refit-electrical-load-measurements-cleaned. Extract the files using 7-Zip and place all the CSV files in a folder titled "refit_dataset" in the root of the project folder.
+
 ## Getting Started
 
 To download this project, run the following command:
@@ -28,15 +35,18 @@ To download this project, run the following command:
 git clone https://github.com/JackBarber98/prunedNILM.git
 ```
 
-The REFIT: Electrical Load Measurements Dataset (Cleaned) is required to create training, validation, and testing datasets. This can be downloaded from https://pureportal.strath.ac.uk/en/datasets/refit-electrical-load-measurements-cleaned. Extract the files using 7-Zip and place all the CSV files in a folder titled "refit-dataset" in the root of the project.
-
-To generate the required datasets, run the following command:
+To generate the required training, testing, and validation datasets for a target appliance, run the following command:
 
 ```bash
 python dataset_generator.py --appliance_name="kettle"
 ```
 
-Note: A new dataset must be created for each appliance you wish to train a model for.
+Note that a new dataset must be created for each appliance you wish to train a model for. The following devices are supported:
+- "kettle"
+- "fridge"
+- "dishwasher"
+- "washingmachine"
+- "microwave"
 
 ## Pruning Algorithms
 
@@ -76,6 +86,18 @@ TFMOT pruning can be utilised during training using the following:
 python train_main.py --pruning_algorithm="tfmot"
 ```
 
+## Alternative Seq2Point Architectures
+
+The default architecture used by Zhang et al. can be accessed using the following terminal command:
+```bash
+python train_main.py --network_type="default"
+```
+
+This architecture is used when no network type is provided upon initialising the training of a model.
+
+Also available is a "reduced" architecture containing ten fewer filters per convolutional layer, and 2^9 instead of 2^10 hidden layer neurons. This can be accessed by changing the network type to ```"reduced"```. The default architecture with dropout applied to each network layer can be utilised by replacing the network type with ```"dropout"```, whilst the reduced
+architecture with dropout applied can be used with ```"reduced_dropout"```.
+
 ## Usage
 
 ### Training
@@ -96,6 +118,11 @@ python train_main.py --pruning_algorithm="tfmot"
                         The pruning algorithm that the network will train
                         with. Default is none. Available are: spp, entropic,
                         threshold.
+  --network_type NETWORK_TYPE
+                        The seq2point architecture to use. Only use if you 
+                        do not want to use the standard architecture. 
+                        Available are: standard, dropout, smaller, and 
+                        optimal. 
 ```
 
 ### Testing
@@ -115,8 +142,14 @@ python train_main.py --pruning_algorithm="tfmot"
                         Default is 1000.
   --crop CROP           The number of rows of the dataset to take training
                         data from. Default is 10000.
+  --pruning_algorithm PRUNING ALGORITHM
+                        The pruning algorithm of the model to test. Default 
+                        is none. 
+  --network_type NETWORK TYPE
+                        The seq2point architecture to use. Only use if you 
+                        do not want to use the standard architecture. 
+                        Available are: standard, dropout, smaller, and optimal. 
 ```
-
 
 ## References
 
