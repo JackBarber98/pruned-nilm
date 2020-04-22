@@ -11,18 +11,30 @@ from appliance_data import appliance_data
 import matplotlib.pyplot as plt
 
 class Tester():
-    def __init__(self, appliance, pruning_algorithm, transfer_domain, crop, batch_size, network_type):
+
+    """ Used to test and evaluate a pre-trained seq2point model with or without pruning applied. 
+    
+    Parameters:
+    __appliance (string): The target appliance.
+    __pruning_algorithm (string): The pruning algorithm the model was trained with.
+    __network_type (string): The architecture of the model.
+    __crop (int): The maximum number of rows of data to evaluate the model with.
+    __batch_size (int): The number of rows per testing batch.
+    __window_size (int): The size of eaech sliding window
+    __window_offset (int): The offset of the inferred value from the sliding window.
+    __test_directory (string): The directory of the test file for the model.
+    
+    """
+
+    def __init__(self, appliance, pruning_algorithm, crop, batch_size, network_type):
         self.__appliance = appliance
         self.__pruning_algorithm = pruning_algorithm
-        self.__transfer_domain = transfer_domain
         self.__network_type = network_type
 
         self.__crop = crop
         self.__batch_size = batch_size
         self.__window_size = 601
         self.__window_offset = int(0.5 * self.__window_size - 1)
-
-        self.plotting = True
 
         self.__test_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
 

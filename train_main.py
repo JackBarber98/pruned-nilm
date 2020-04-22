@@ -16,4 +16,3 @@ arguments = parser.parse_args()
 
 trainer = Trainer(arguments.appliance_name, arguments.pruning_algorithm, arguments.batch_size, arguments.crop, arguments.network_type)
 trainer.train_model()
-

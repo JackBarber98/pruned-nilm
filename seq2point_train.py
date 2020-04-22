@@ -13,19 +13,41 @@ from pruning_algorithms.spp_callback import SPP
 from pruning_algorithms.entropic_callback import Entropic
 from pruning_algorithms.threshold_callback import Threshold
 
-import smtplib
-
 class Trainer():
+
+    """ Used to train a seq2point model with or without pruning applied Supports 
+    various alternative architectures. 
+    
+    Parameters:
+    __appliance (string): The target appliance.
+    __pruning_algorithm (string): The pruning algorithm the model was trained with.
+    __network_type (string): The architecture of the model.
+    __crop (int): The maximum number of rows of data to evaluate the model with.
+    __batch_size (int): The number of rows per testing batch.
+    __window_size (int): The size of eaech sliding window
+    __window_offset (int): The offset of the inferred value from the sliding window.
+    __max_chunk_size (int): The largest possible number of row per chunk.
+    __validation_frequency (int): The number of epochs between model validation.
+    __training_directory (string): The directory of the model's training file.
+    __validation_directory (string): The directory of the model's validation file.
+    __training_chunker (TrainSlidingWindowGenerator): A sliding window provider 
+    that returns feature / target pairs. For training use only.
+    __validation_chunker (TrainSlidingWindowGenerator): A sliding window provider 
+    that returns feature / target pairs. For validation use only.
+    
+    """
+
     def __init__(self, appliance, pruning_algorithm, batch_size, crop, network_type):
         self.__appliance = appliance
         self.__pruning_algorithm = pruning_algorithm
-        self.__batch_size = batch_size
-        self.__crop = crop
         self.__network_type = network_type
+        self.__crop = crop
+        self.__batch_size = batch_size
 
-        self.__sequence_length = 601
-        self.__window_offset = int((0.5 * self.__sequence_length) - 1)
+        self.__window_size = 601
+        self.__window_offset = int((0.5 * self.__window_size) - 1)
         self.__max_chunk_size = 5 * 10 ** 2
+        self.__validation_frequency = 1
 
         # Directories of the training and validation files. Always has the structure 
         # ./{appliance_name}/{appliance_name}_train_.csv for training or 
@@ -48,8 +70,6 @@ class Trainer():
                                             skip_rows=0, 
                                             offset=self.__window_offset, 
                                             ram_threshold=5*10**5)
-
-        self.__validation_frequency = 1
 
     def train_model(self):
 
@@ -92,7 +112,7 @@ class Trainer():
 
     def default_train(self, model, early_stopping, steps_per_training_epoch):
 
-        """The default training method the neural network will use. No pruning occurs.
+        """ The default training method the neural network will use. No pruning occurs.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.
@@ -108,18 +128,18 @@ class Trainer():
 
         training_history = model.fit_generator(self.__training_chunker.load_dataset(),
             steps_per_epoch=steps_per_training_epoch,
-            epochs=2,
+            epochs=50,
             verbose=1,
             validation_data = self.__validation_chunker.load_dataset(),
-            validation_steps=1,
-            validation_freq=1,
+            validation_steps=100,
+            validation_freq=self.__validation_frequency,
             callbacks=[early_stopping])
 
         return training_history
 
     def tfmot_pruning(self, model, early_stopping, steps_per_training_epoch):
 
-        """Trains the model with TensorFlow Optimisation Tookit's prune_low_magnitude method.
+        """ Trains the model with TensorFlow Optimisation Tookit's prune_low_magnitude method.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.
@@ -158,7 +178,7 @@ class Trainer():
     def spp_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
-        """Trains the model with Wang et al.'s structured probabilistic pruning method.
+        """ Trains the model with Wang et al.'s structured probabilistic pruning method.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.
@@ -187,7 +207,7 @@ class Trainer():
     def entropic_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
-        """Trains the model with the entropic pruning method.
+        """ Trains the model with the entropic pruning method.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.
@@ -216,7 +236,7 @@ class Trainer():
     def threshold_pruning(self, model, early_stopping, steps_per_training_epoch):
 
 
-        """Trains the model with Ashouri et al.'s threshold-based pruning method.
+        """ Trains the model with Ashouri et al.'s threshold-based pruning method.
 
         Parameters:
         model (tensorflow.keras.Model): The seq2point model being trained.

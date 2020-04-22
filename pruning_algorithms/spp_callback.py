@@ -8,17 +8,15 @@ class SPP(tf.keras.callbacks.Callback):
     probability theory to determine whether a weight is useful or not.
 
     Parameters:
-    PRUNING_FREQUENCY (int): The intervals between pruning is performed (in epochs).
-    R (float): The ratio of weights to prune from the convolutional layers.
-    A (float): A constant to control the magnitude of delta __R (see Wang et al.'s paper).
-    u (float): A constant defining the flatness of the probability function.
-
-    l1_norms (list): A list of the Manhattan distances of each filter in each convolutional layer.
-    ranks (list): A list of ranks of each filter in each convolutional layer.
-    layer_delta_ranks (list): A list of the outputs of delta(R) = f(R) as per Wang et al.'s research.
-    layer_probabilities (list): A list of the probability of the weights in each filter being pruned.
-
-    batch_count (int): A count of the number of batches that have been processed during training. 
+    __pruning_frequency (int): The intervals between pruning is performed (in epochs).
+    __R (float): The ratio of weights to prune from the convolutional layers.
+    __A (float): A constant to control the magnitude of delta __R (see Wang et al.'s paper).
+    __u (float): A constant defining the flatness of the probability function.
+    __l1_norms (list): A list of the Manhattan distances of each filter in each convolutional layer.
+    __ranks (list): A list of ranks of each filter in each convolutional layer.
+    __layer_delta_ranks (list): A list of the outputs of delta(R) = f(R) as per Wang et al.'s research.
+    __layer_probabilities (list): A list of the probability of the weights in each filter being pruned.
+    __batch_count (int): A count of the number of batches that have been processed during training. 
 
     """
 
@@ -43,7 +41,8 @@ class SPP(tf.keras.callbacks.Callback):
         """ Checks whether the pruning conditions have been met and performs pruning only if they have been.
 
         Parameters:
-        epoch (int): The current training epoch. 
+        epoch (int): The current training epoch.
+        logs (object): The error metrics and training data from the previous batch. 
 
         """
 
@@ -66,8 +65,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def ratio_is_greater_than_r(self):
 
-        """ Determines whether __R filters have been pruned from the network.
-        """
+        """ Determines whether __R filters have been pruned from the network. """
 
         flat_probs = np.hstack(self.__layer_probabilities)
         if np.count_nonzero(flat_probs == 1) / np.size(flat_probs) >= self.__R:
@@ -75,8 +73,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def all_probabilities_are_integers(self):
 
-        """ Checks whether the algorithm has determined exactly which filters to keep and which to prune.
-        """
+        """ Checks whether the algorithm has determined exactly which filters to keep and which to prune. """
 
         flat_probs = np.hstack(self.__layer_probabilities)
         ones = np.count_nonzero(flat_probs == 1)
@@ -87,8 +84,7 @@ class SPP(tf.keras.callbacks.Callback):
 
     def spp_pruning(self):
         
-        """ Performs all the steps required to update the pruning probabilities of each convolutional layer.
-        """
+        """ Performs all the steps required to update the pruning probabilities of each convolutional layer. """
 
         model = self.model
 
@@ -141,6 +137,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         layer_norms (numpy.ndarray): The level one norms of the filters in a convolutional layer.
+        
         """
 
         return np.array(layer_norms).argsort().argsort()
@@ -151,6 +148,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         num_of_filters (int): The number of filters in the convolutional layer.
+        
         """
 
         return (np.log10(2) - np.log10(self.__u)) / (self.__R * num_of_filters)
@@ -161,6 +159,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters: 
         alpha (float): The value calculated by the function self.alpha
+        
         """
 
         return - np.log10(self.__u) / alpha
@@ -171,6 +170,7 @@ class SPP(tf.keras.callbacks.Callback):
 
         Parameters:
         ranks (numpy.ndarray): The ranks of the level one norms of the filters in each convolutional layer.
+        
         """
 
         alpha = self.alpha(len(ranks))

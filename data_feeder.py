@@ -10,13 +10,15 @@ class TrainSlidingWindowGenerator():
     """Yields features and targets for training a ConvNet.
 
     Parameters:
-    file_name (string): The path where the training dataset is located.
-    chunk_size (int): The size of each chunk of data to be processed.
-    shuffle (bool): Whether the dataset should be shuffled before being returned.
-    offset (int):
-    batch_size (int): The size of each batch in a chunk.
-    crop (int): The number of rows of the dataset to return.
-    ram_threshold (int): The maximum amount of RAM to utilise at a time.
+    __file_name (string): The path where the training dataset is located.
+    __batch_size (int): The size of each batch from the dataset to be processed.
+    __chunk_size (int): The size of each chunk of data to be processed.
+    __shuffle (bool): Whether the dataset should be shuffled before being returned.
+    __offset (int):
+    __crop (int): The number of rows of the dataset to return.
+    __skip_rows (int): The number of rows of a dataset to skip before reading data.
+    __ram_threshold (int): The maximum amount of RAM to utilise at a time.
+    total_size (int): The number of rows read from the dataset.
 
     """
 
@@ -133,9 +135,11 @@ class TestSlidingWindowGenerator(object):
     """Yields features and targets for testing and validating a ConvNet.
 
     Parameters:
-    number_of_windows (int): The number of sliding windows to produce.
-    inputs (numpy.array): The available testing / validation features.
-    offset (int):
+    __number_of_windows (int): The number of sliding windows to produce.
+    __offset (int): The offset of the infered value from the sliding window.
+    __inputs (numpy.ndarray): The available testing / validation features.
+    __targets (numpy.ndarray): The target values corresponding to __inputs.
+    __total_size (int): The total number of inputs.
 
     """
 

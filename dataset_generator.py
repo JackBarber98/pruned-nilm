@@ -7,6 +7,22 @@ from remove_space import remove_space
 from appliance_data import appliance_data
 
 class DatasetGenerator():
+
+    """ Creates an appliance-specific set of training, testing, and 
+    validation datasets from the REFIT dataset. 
+    
+    Parameters:
+    __appliance (string): The name of the target appliance.
+    __directory (string): The location of the REFIT dataset.
+    __agg_mean (int): The mean value used to normalise the aggregate 
+    power data.
+    __agg_std (int): The standard deviation used to normalise the 
+    aggregate power data.
+    __training_set_length (int): The total number of rows in the appliance's 
+    training dataset.
+    
+    """
+
     def __init__(self):
         args = self.get_arguments()
 

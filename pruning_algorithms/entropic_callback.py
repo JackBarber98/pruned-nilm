@@ -8,13 +8,14 @@ class Entropic(tf.keras.callbacks.Callback):
     determine which weights to prune.
 
     Parameters:
-    pruning_frequency (int): The intervals between pruning is performed (in epochs).
-    previous_loss (float): The loss experienced during the last training epoch.
-    means (list): The mean of the weights of each layer.
-    stds (list): The standards deviation of the weights of each layer.
-    layer_probabilities (list): A 2D list of the probability of a weight existing.
-    layer_entropies (list): A 1D list of the entropy of each layer of the network.
-    layer_information (list): A 2D list of the information held by each weight. 
+    __pruning_frequency (int): The intervals between pruning is performed (in epochs).
+    __previous_loss (float): The loss experienced during the last training epoch.
+    __means (list): The mean of the weights of each layer.
+    __stds (list): The standards deviation of the weights of each layer.
+    __layer_probabilities (list): A 2D list of the probability of a weight existing.
+    __layer_entropies (list): A 1D list of the entropy of each layer of the network.
+    __layer_information (list): A 2D list of the information held by each weight. 
+    __batch_count (int): The number of batches that have occured so far.
 
     """
 
@@ -39,6 +40,7 @@ class Entropic(tf.keras.callbacks.Callback):
 
         Parameters:
         epoch (int): The current training epoch.
+        logs (object): The error metrics and training data from the previous batch.
 
         """
 
@@ -166,6 +168,7 @@ class Entropic(tf.keras.callbacks.Callback):
         """ Sets the weights deemed to be redundant to zero.
 
         Parameters:
+        layer (tf.keras.layers): A TensorFlow model layer.
         weights (numpy.ndarray): An array of all non-bias weights in a layer.
         index (int): The index of the layer in the model's layers array.
 
