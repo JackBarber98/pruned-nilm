@@ -2,7 +2,7 @@
 
 This code repository implements four weight pruning algorithms designed to reduce the size of Zhang et al.'s sequence-to-point deep learning model for use in energy disaggreation / non-intrusive load monitoring. Three alternative network architectures are
 also available. These include a dropout variant of Zhang et al.'s architecture, a variant with fewer weights and filters, and an
-architecture implementing both of these. Support is also provided for transfer learning.
+architecture implementing both of these.
 
 ## Prerequisites
 
