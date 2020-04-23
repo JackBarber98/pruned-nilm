@@ -38,8 +38,8 @@ class Tester():
 
         self.__test_directory = "./" + self.__appliance + "/" + self.__appliance + "_test_.csv"
 
-        log_file = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log"
-        logging.basicConfig(filename=log_file,level=logging.INFO)
+        self.__log_file = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_" + self.__network_type + ".log"
+        logging.basicConfig(filename=self.__log_file,level=logging.INFO)
 
     def test_model(self):
 
@@ -116,7 +116,6 @@ class Tester():
 
         """
         num_total_zeros = 0
-        num_total_weights = 0
         num_dense_zeros = 0
         num_dense_weights = 0
         num_conv_zeros = 0
@@ -129,14 +128,10 @@ class Tester():
                     num_conv_weights += np.size(layer_weights)
                     num_conv_zeros += np.count_nonzero(layer_weights==0)
 
-                    num_total_weights += num_conv_weights
-                    num_total_zeros += num_conv_zeros
+                    num_total_zeros += np.size(layer_weights)
                 else:
                     num_dense_weights += np.size(layer_weights)
                     num_dense_zeros += np.count_nonzero(layer_weights==0)
-
-                    num_total_weights += num_dense_weights
-                    num_total_zeros += num_dense_zeros
 
         conv_zeros_string = "CONV. ZEROS: " + str(num_conv_zeros)
         conv_weights_string = "CONV. WEIGHTS: " + str(num_conv_weights)
@@ -147,10 +142,10 @@ class Tester():
         dense_sparsity_ratio = "DENSE RATIO: " + str(num_dense_zeros / num_dense_weights)
 
         total_zeros_string = "TOTAL ZEROS: " + str(num_total_zeros)
-        total_weights_string = "TOTAL WEIGHTS: " + str(num_total_weights)
-        total_sparsity_ratio = "TOTAL RATIO: " + str(num_total_zeros / num_total_weights)
+        total_weights_string = "TOTAL WEIGHTS: " + str(model.count_params())
+        total_sparsity_ratio = "TOTAL RATIO: " + str(num_total_zeros / model.count_params())
 
-        print("LOGGING PATH: ", "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_log.log")
+        print("LOGGING PATH: ", self.__log_file)
 
         logging.info(conv_zeros_string)
         logging.info(conv_weights_string)
@@ -190,13 +185,13 @@ class Tester():
         plt.figure(1)
         plt.plot(test_agg[self.__window_offset: -self.__window_offset], label="Aggregate")
         plt.plot(test_target[:test_agg.size - (2 * self.__window_offset)], label="Ground Truth")
-        plt.plot(testing_history[:test_agg.size - (2 * self.__window_offset)], label="Testing")
-        plt.title('Kettle Preliminary Test Results')
-        plt.ylabel('Normalised Prediction')
-        plt.xlabel('Testing Window')
+        plt.plot(testing_history[:test_agg.size - (2 * self.__window_offset)], label="Predicted")
+        plt.title(self.__appliance + " " + self.__network_type + "(" + self.__pruning_algorithm + ")")
+        plt.ylabel("Power Value (Watts)")
+        plt.xlabel("Testing Window")
         plt.legend()
 
-        file_path = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_test_figure.png"
+        file_path = "./" + self.__appliance + "/saved_models/" + self.__appliance + "_" + self.__pruning_algorithm + "_" + self.__network_type + "_test_figure.png"
         plt.savefig(fname=file_path)
 
         plt.show()
