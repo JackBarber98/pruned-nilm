@@ -134,9 +134,6 @@ architecture with dropout applied can be used with ```"reduced_dropout"```.
                         The name of the appliance to perform disaggregation
                         with. Default is kettle. Available are: kettle,
                         fridge, dishwasher, microwave.
-  --transfer_domain TRANSFER_DOMAIN
-                        The appliance used to train the model that you would
-                        like to test (i.e. transfer learning).
   --batch_size BATCH_SIZE
                         The batch size to use when training the network.
                         Default is 1000.
